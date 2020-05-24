@@ -3,7 +3,10 @@
 #include <string.h>
 #define max 10
 #define opcodeNameMax 7
-#define inputMax 34
+#define srcMax 33
+#define srcTagMax 6
+#define srcCodeMax 6
+#define srcOperandMax 8
 
 struct optab_Node
 {
@@ -22,13 +25,18 @@ optab_node * newNode(void)
     return add;
 }
 
-void print(optab_node * head) {
+void print(optab_node * head)
+{
     optab_node * ptr;
-    if(head->next == NULL) {
+    if(head->next == NULL)
+    {
         printf("empty\n");
-    }else{
+    }
+    else
+    {
         ptr = head->next;
-        while(ptr != NULL) {
+        while(ptr != NULL)
+        {
             printf("%6s %d %02X\n", ptr->name, ptr->format, ptr->opcode);
             ptr = ptr->next;
         }
@@ -39,7 +47,7 @@ void print(optab_node * head) {
 void create_Optab(void)
 {
     optab_node* ptr;
-    int i, sum = 0, readCol;
+    int i, sum = 0;
     for(i = 0; i < max; i ++)
     {
         optabHeader[i] = newNode();
@@ -47,15 +55,18 @@ void create_Optab(void)
     FILE * fp_Optab = fopen("optab.txt", "r");
     int format, opcode;
     char name[opcodeNameMax];
-    while(1) {
+    while(1)
+    {
         fscanf(fp_Optab, "%s %d %x", name, &format, &opcode);
         if(feof(fp_Optab) != 0) break;
-        for(i = 0; i < strlen(name); i++) {
+        for(i = 0; i < strlen(name); i++)
+        {
             sum += name[i];
         }
         sum %= 10;
         ptr = optabHeader[sum];
-        while(ptr->next != NULL) {
+        while(ptr->next != NULL)
+        {
             ptr = ptr->next;
         }
         ptr->next = newNode();
@@ -66,7 +77,8 @@ void create_Optab(void)
         sum = 0;
     }
     fclose(fp_Optab);
-    for(i = 0; i < max; i++) {
+    for(i = 0; i < max; i++)
+    {
         print(optabHeader[i]);
     }
 }
@@ -74,16 +86,41 @@ void create_Optab(void)
 int main()
 {
     create_Optab();
-    FILE * fp = fopen("srcpro.txt", "r");
-    char inputStr[inputMax];
-    while(1)
+    FILE * fp_input = fopen("srcpro.txt", "r");
+    FILE * fp_output = fopen("intermediate.txt", "w");
+    char srcStr[srcMax], srcCode[srcCodeMax+1], srcOperand[srcOperandMax+1];
+    int locctr;
+    int flag = 0;
+    while(fgets(srcStr, srcMax, fp_input) != NULL)
     {
-        fgets(inputStr, inputMax, fp);
-        if(feof(fp) != 0) break;
+        if(flag)
+        {
+            flag--;
+            continue;
+        }
+        flag++;
+        printf("%s1\n", srcStr);
+        strncpy(srcCode, srcStr + srcTagMax + 2, srcCodeMax);
+        srcCode[srcCodeMax] = '\0';
+//        printf("%s\n", srcCode);
+        if(strcmp(srcCode, "START ") == 0)
+        {
+            locctr = atoi(strncpy(srcOperand, srcStr + srcTagMax + 2 + srcCodeMax + 2, srcOperandMax));
+            srcOperand[srcOperandMax] = '\0';
+            fputs(srcStr, fp_output);
+            continue;
+//            printf("%d\n", locctr);
+        }else{
+            locctr = 0;
+        }
+        if(strcmp(srcCode, "END   ") != 0) {
 
-        printf("%s\n", inputStr);
+//                if()
+
+        }
     }
 
-    fclose(fp);
+    fclose(fp_input);
+    fclose(fp_output);
     return 0;
 }
