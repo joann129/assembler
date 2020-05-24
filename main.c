@@ -28,7 +28,7 @@ void print(optab_node * head) {
     }else{
         ptr = head->next;
         while(ptr != NULL) {
-            printf("%s\n", ptr->name);
+            printf("%6s %d %02X\n", ptr->name, ptr->format, ptr->opcode);
             ptr = ptr->next;
         }
     }
@@ -44,12 +44,13 @@ void create_Optab(void)
         optabHeader[i] = newNode();
     }
     FILE * fp_Optab = fopen("optab.txt", "r");
-    char str_op[opcodeNameMax];
+    int format, opcode;
+    char name[opcodeNameMax];
     while(1) {
-        fscanf(fp_Optab, "%s", str_op);
+        fscanf(fp_Optab, "%s %d %x", name, &format, &opcode);
         if(feof(fp_Optab) != 0) break;
-        for(i = 0; i < strlen(str_op); i++) {
-            sum += str_op[i];
+        for(i = 0; i < strlen(name); i++) {
+            sum += name[i];
         }
         sum %= 10;
         ptr = optabHeader[sum];
@@ -58,18 +59,15 @@ void create_Optab(void)
         }
         ptr->next = newNode();
         ptr = ptr->next;
-        strcpy(ptr->name, str_op);
-        fscanf(fp_Optab, "%s", str_op);
-        //ptr->format = atoi(str_op);
-        fscanf(fp_Optab, "%s", str_op);
-        ptr->opcode = atoi(str_op);
+        strcpy(ptr->name, name);
+        ptr->format = format;
+        ptr->opcode = opcode;
         sum = 0;
     }
     fclose(fp_Optab);
     for(i = 0; i < max; i++) {
         print(optabHeader[i]);
     }
-    //print
 }
 
 int main()
