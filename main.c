@@ -3,6 +3,7 @@
 #include <string.h>
 #define max 10
 #define opcodeNameMax 7
+#define inputMax 34
 
 struct optab_Node
 {
@@ -12,7 +13,7 @@ struct optab_Node
     struct optab_Node * next;
 };
 typedef struct optab_Node optab_node;
-optab_node * optabHeader[10];
+optab_node * optabHeader[max];
 
 optab_node * newNode(void)
 {
@@ -74,12 +75,13 @@ int main()
 {
     create_Optab();
     FILE * fp = fopen("srcpro.txt", "r");
-    char str[20];
+    char inputStr[inputMax];
     while(1)
     {
-        fscanf(fp, "%s", str);
+        fgets(inputStr, inputMax, fp);
         if(feof(fp) != 0) break;
-        printf("%s\n", str);
+
+        printf("%s\n", inputStr);
     }
 
     fclose(fp);
