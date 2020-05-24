@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#define max 10
+#define opcodeHeaderMax 10
 #define opcodeNameMax 7
 #define srcMax 33
 #define srcTagMax 6
@@ -16,7 +16,7 @@ struct optab_Node
     struct optab_Node * next;
 };
 typedef struct optab_Node optab_node;
-optab_node * optabHeader[max];
+optab_node * optabHeader[opcodeHeaderMax];
 
 optab_node * newNode(void)
 {
@@ -48,7 +48,7 @@ void create_Optab(void)
 {
     optab_node* ptr;
     int i, sum = 0;
-    for(i = 0; i < max; i ++)
+    for(i = 0; i < opcodeHeaderMax; i ++)
     {
         optabHeader[i] = newNode();
     }
@@ -77,7 +77,7 @@ void create_Optab(void)
         sum = 0;
     }
     fclose(fp_Optab);
-    for(i = 0; i < max; i++)
+    for(i = 0; i < opcodeHeaderMax; i++)
     {
         print(optabHeader[i]);
     }
@@ -89,8 +89,9 @@ int main()
     FILE * fp_input = fopen("srcpro.txt", "r");
     FILE * fp_output = fopen("intermediate.txt", "w");
     char srcStr[srcMax], srcCode[srcCodeMax+1], srcOperand[srcOperandMax+1];
-    int locctr;
-    int flag = 0;
+    int locctr, startLoc;
+    int flag = 0, i, sum = 0;
+    optab_node * ptr;
     while(fgets(srcStr, srcMax, fp_input) != NULL)
     {
         if(flag)
@@ -101,21 +102,42 @@ int main()
         flag++;
         printf("%s1\n", srcStr);
         strncpy(srcCode, srcStr + srcTagMax + 2, srcCodeMax);
-        srcCode[srcCodeMax] = '\0';
+        strncpy(srcOperand, srcStr + srcTagMax + 2 + srcCodeMax + 2, srcOperandMax);
 //        printf("%s\n", srcCode);
-        if(strcmp(srcCode, "START ") == 0)
+        if(strncmp(srcCode, "START", 5) == 0)
         {
-            locctr = atoi(strncpy(srcOperand, srcStr + srcTagMax + 2 + srcCodeMax + 2, srcOperandMax));
-            srcOperand[srcOperandMax] = '\0';
+            locctr = atoi(srcOperand);
+            startLoc = locctr;
             fputs(srcStr, fp_output);
             continue;
 //            printf("%d\n", locctr);
         }else{
             locctr = 0;
         }
-        if(strcmp(srcCode, "END   ") != 0) {
+        if(strncmp(srcCode, "END", 3) != 0) {
 
-//                if()
+                for(i = 0; i < strlen(srcCode); i++) {
+                    sum += srcCode[i];
+                }
+                sum %= 10;
+                ptr = optabHeader[sum];
+                if(strncmp(srcCode, "WORD", 4) == 0) {
+                    locctr += 3;
+                }else if(strncmp(srcCode, "RESW", 4) == 0) {
+                    locctr += 3 * startLoc;
+                }else if(strncmp(srcCode, "RESB", 4) == 0) {
+                    locctr += startLoc;
+                }else if(strncmp(srcCode, "BYTE", 4) == 0) {
+
+                }
+                while(ptr->next != NULL) {
+                    if(strncmp(ptr->name, srcCode, strlen(ptr->name)) == 0) {
+                        locctr += 3;
+                        break;
+                    }else{
+                        ptr = ptr->next;
+                    }
+                }
 
         }
     }
