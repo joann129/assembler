@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #define opcodeHeaderMax 10
 #define opcodeNameMax 7
 #define srcMax 33
@@ -83,6 +84,14 @@ void create_Optab(void)
     }
 }
 
+//int decemalToHex(int num) {
+//    int i, j, ans = 0;
+//    for(i = 0; i < 4; i++) {
+//        ans += (num % (int)pow(16, i)) * (int)pow(10, i);
+//    }
+//    return ans;
+//}
+
 int main()
 {
     create_Optab();
@@ -90,7 +99,7 @@ int main()
     FILE * fp_output = fopen("intermediate.txt", "w");
     char srcStr[srcMax], srcCode[srcCodeMax+1], srcOperand[srcOperandMax+1];
     int locctr, startLoc;
-    int flag = 0, i, sum = 0;
+    int flag = 0, i, sum = 0, srcOper;
     optab_node * ptr;
     while(fgets(srcStr, srcMax, fp_input) != NULL)
     {
@@ -100,15 +109,17 @@ int main()
             continue;
         }
         flag++;
-        printf("%s1\n", srcStr);
+        printf("%s\n", srcStr);
         strncpy(srcCode, srcStr + srcTagMax + 2, srcCodeMax);
         strncpy(srcOperand, srcStr + srcTagMax + 2 + srcCodeMax + 2, srcOperandMax);
+        srcOper = atoi(srcOperand);
 //        printf("%s\n", srcCode);
         if(strncmp(srcCode, "START", 5) == 0)
         {
-            locctr = atoi(srcOperand);
+            locctr = srcOper;
             startLoc = locctr;
             fputs(srcStr, fp_output);
+            fputs("\n", fp_output);
             continue;
 //            printf("%d\n", locctr);
         }else{
@@ -124,9 +135,9 @@ int main()
                 if(strncmp(srcCode, "WORD", 4) == 0) {
                     locctr += 3;
                 }else if(strncmp(srcCode, "RESW", 4) == 0) {
-                    locctr += 3 * startLoc;
+                    locctr += 3 * srcOper;
                 }else if(strncmp(srcCode, "RESB", 4) == 0) {
-                    locctr += startLoc;
+                    locctr += srcOper;
                 }else if(strncmp(srcCode, "BYTE", 4) == 0) {
 
                 }
