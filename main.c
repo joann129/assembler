@@ -4,6 +4,7 @@
 #include <math.h>
 #define opcodeHeaderMax 10
 #define opcodeNameMax 7
+#define opcodeFormatyMax 4
 #define srcMax 33
 #define srcTagMax 6
 #define srcCodeMax 6
@@ -12,7 +13,7 @@
 struct optab_Node
 {
     char name[opcodeNameMax];
-    int format;
+    char format[opcodeFormatyMax];
     int opcode;
     struct optab_Node * next;
 };
@@ -38,7 +39,7 @@ void print(optab_node * head)
         ptr = head->next;
         while(ptr != NULL)
         {
-            printf("%6s %d %02X\n", ptr->name, ptr->format, ptr->opcode);
+            printf("%6s %3s %02X\n", ptr->name, ptr->format, ptr->opcode);
             ptr = ptr->next;
         }
     }
@@ -54,11 +55,11 @@ void create_Optab(void)
         optabHeader[i] = newNode();
     }
     FILE * fp_Optab = fopen("optab.txt", "r");
-    int format, opcode;
-    char name[opcodeNameMax];
+    int opcode;
+    char name[opcodeNameMax], format[opcodeFormatyMax];
     while(1)
     {
-        fscanf(fp_Optab, "%s %d %x", name, &format, &opcode);
+        fscanf(fp_Optab, "%s %s %x", name, format, &opcode);
         if(feof(fp_Optab) != 0) break;
         for(i = 0; i < strlen(name); i++)
         {
@@ -73,7 +74,7 @@ void create_Optab(void)
         ptr->next = newNode();
         ptr = ptr->next;
         strcpy(ptr->name, name);
-        ptr->format = format;
+        strcpy(ptr->format, format);
         ptr->opcode = opcode;
         sum = 0;
     }

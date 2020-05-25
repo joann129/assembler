@@ -1,2 +1,1 @@
 COPY    START   0               
-COPY    START   0               
