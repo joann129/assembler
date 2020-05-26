@@ -98,7 +98,7 @@ int main()
     create_Optab();
     FILE * fp_input = fopen("srcpro.txt", "r");
     FILE * fp_output = fopen("intermediate.txt", "w");
-    char srcStr[srcMax], srcCode[srcCodeMax+1], srcOperand[srcOperandMax+1];
+    char srcStr[srcMax], srcTag[srcTagMax], srcCode[srcCodeMax+1], srcOperand[srcOperandMax+1];
     int locctr, startLoc;
     int flag = 0, i, sum = 0, srcOper;
     optab_node * ptr;
@@ -111,6 +111,7 @@ int main()
         }
         flag++;
         printf("%s\n", srcStr);
+        strncpy(srcTag, srcStr, srcTagMax);
         strncpy(srcCode, srcStr + srcTagMax + 2, srcCodeMax);
         strncpy(srcOperand, srcStr + srcTagMax + 2 + srcCodeMax + 2, srcOperandMax);
         srcOper = atoi(srcOperand);
