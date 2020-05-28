@@ -48,14 +48,19 @@ char *trim(char *str)
 	return str;
 }
 
-int key(char name[opcodeNameMax])
+int key(char name[opcodeNameMax], int length)
 {
     int i, sum = 0;
-    for(i = 0; i < strlen(name); i++)
+    for(i = 0; i < length; i++)
     {
+        if(name[i] == 32) {
+            break;
+        }
+        printf("%d ", name[i]);
         sum += name[i];
     }
     sum %= 10;
+    printf("\n");
     return sum;
 
 }
@@ -112,7 +117,7 @@ void optabCreate(void)
 //            sum += name[i];
 //        }
 //        sum %= 10;
-        ptr = optabHeader[key(name)];
+        ptr = optabHeader[key(name, opcodeNameMax)];
         while(ptr->next != NULL)
         {
             ptr = ptr->next;
@@ -232,15 +237,21 @@ int main()
 //                sum += srcCode[i];
 //            }
 //            sum %= 10;
+            if(srcTag[0] != 32) {
+                keyTemp = key(srcTag, srcTagMax);
+//                printf("key is %d\n", keyTemp);
+                if(!symtabFind(keyTemp, srcTag))
+                {
+                    symtabInsert(keyTemp, srcTag, locctr);
+                }
+                else
+                {
+                    printf("輸入檔有重複符號\n");
+                }
+//                symtabPrint(symtabHeader[keyTemp]);
+            }
 
-//            keyTemp = key(srcTag);
-//            if(!symtabFind(keyTemp, srcTag)) {
-//                symtabInsert(keyTemp, srcTag, locctr);
-//            }else{
-//                printf("輸入檔有重複符號\n");
-//            }
-//            symtabPrint(symtabHeader[keyTemp]);
-            ptr = optabHeader[key(srcCode)];
+            ptr = optabHeader[key(srcCode, srcCodeMax)];
             if(strncmp(srcCode, "WORD", 4) == 0)
             {
                 locctr += 3;
