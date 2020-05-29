@@ -205,7 +205,7 @@ int main()
         srcOperand = token(temp2);
 
         srcOper = atoi(srcOperand);
-        if(strncmp(srcCode, "START", 5) == 0)
+        if(strcmp(srcCode, "START") == 0)
         {
             locctr = srcOper;
             startLoc = locctr;
@@ -218,7 +218,7 @@ int main()
         {
             locctr = 0;
         }
-        if(strncmp(srcCode, "END", 3) != 0)
+        if(strcmp(srcCode, "END") != 0)
         {
 
 //            for(i = 0; i < strlen(srcCode); i++)
