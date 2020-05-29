@@ -1,11 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 #include <math.h>
 #define headerMax 10
 #define opcodeNameMax 7
 #define opcodeFormatyMax 4
+#define opcodeInfoMax 6
 #define symtabNameMax 7
 #define srcMax 33
 #define srcTagMax 6
@@ -16,6 +16,7 @@ struct optab_Node
 {
     char name[opcodeNameMax];
     char format[opcodeFormatyMax];
+    char info[opcodeInfoMax];
     int opcode;
     struct optab_Node * next;
 };
@@ -30,37 +31,16 @@ struct symtab_Node{
 typedef struct symtab_Node symtab_node;
 symtab_node * symtabHeader[headerMax];
 
-
-char *trim(char *str)
-{
-	if (str == NULL || *str == '\0')
-	{
-		return str;
-	}
-	int len = strlen(str);
-	char *p = str + len - 1;
-	while (p >= str  && isspace(*p))
-	{
-		*p = '\0';
-		--p;
-	}
-
-	return str;
-}
-
-int key(char name[opcodeNameMax], int length)
+int key(char name[opcodeNameMax])
 {
     int i, sum = 0;
-    for(i = 0; i < length; i++)
+    for(i = 0; i < strlen(name); i++)
     {
-        if(name[i] == 32) {
-            break;
-        }
-        printf("%d ", name[i]);
+//        printf("%d ", name[i]);
         sum += name[i];
     }
     sum %= 10;
-    printf("\n");
+//    printf("\n");
     return sum;
 
 }
@@ -90,7 +70,7 @@ void optabPrint(optab_node * head)
         ptr = head->next;
         while(ptr != NULL)
         {
-            printf("%6s %3s %02X\n", ptr->name, ptr->format, ptr->opcode);
+            printf("%6s %3s %02X %5s\n", ptr->name, ptr->format, ptr->opcode, ptr->info);
             ptr = ptr->next;
         }
     }
@@ -107,17 +87,17 @@ void optabCreate(void)
     }
     FILE * fp_Optab = fopen("optab.txt", "r");
     int opcode;
-    char name[opcodeNameMax], format[opcodeFormatyMax];
+    char name[opcodeNameMax], format[opcodeFormatyMax], info[opcodeInfoMax];
     while(1)
     {
-        fscanf(fp_Optab, "%s %s %x", name, format, &opcode);
+        fscanf(fp_Optab, "%s %s %x %s", name, format, &opcode, info);
         if(feof(fp_Optab) != 0) break;
 //        for(i = 0; i < strlen(name); i++)
 //        {
 //            sum += name[i];
 //        }
 //        sum %= 10;
-        ptr = optabHeader[key(name, opcodeNameMax)];
+        ptr = optabHeader[key(name)];
         while(ptr->next != NULL)
         {
             ptr = ptr->next;
@@ -127,6 +107,7 @@ void optabCreate(void)
         strcpy(ptr->name, name);
         strcpy(ptr->format, format);
         ptr->opcode = opcode;
+        strcpy(ptr->info, info);
     }
     fclose(fp_Optab);
     for(i = 0; i < headerMax; i++)
@@ -184,13 +165,16 @@ void symtabCreate(void) {
     }
 }
 
-//int decemalToHex(int num) {
-//    int i, j, ans = 0;
-//    for(i = 0; i < 4; i++) {
-//        ans += (num % (int)pow(16, i)) * (int)pow(10, i);
-//    }
-//    return ans;
-//}
+char *token(char temp[20]) {
+    char * tok;
+    if(temp[0] == ' ') {
+        return NULL;
+    }else{
+        tok = strtok(temp, " ");
+//        printf("%s %d\n", tok, strlen(tok));
+        return tok;
+    }
+}
 
 int main()
 {
@@ -198,7 +182,9 @@ int main()
     symtabCreate();
     FILE * fp_input = fopen("srcpro.txt", "r");
     FILE * fp_output = fopen("intermediate.txt", "w");
-    char srcStr[srcMax], srcTag[srcTagMax], srcCode[srcCodeMax+1], srcOperand[srcOperandMax+1];
+    char srcStr[srcMax], temp[10], temp1[10], temp2[10];
+//    , srcTag[20], srcCode[20], srcOperand[20];
+    char *srcTag, *srcCode, *srcOperand;
     int locctr, startLoc;
     int flag = 0, srcOper, keyTemp;
     optab_node * ptr;
@@ -211,11 +197,14 @@ int main()
         }
         flag++;
         printf("%s\n", srcStr);
-        strncpy(srcTag, srcStr, srcTagMax);
-        strncpy(srcCode, srcStr + srcTagMax + 2, srcCodeMax);
-        strncpy(srcOperand, srcStr + srcTagMax + 2 + srcCodeMax + 2, srcOperandMax);
+        strncpy(temp, srcStr, srcTagMax);
+        srcTag = token(temp);
+        strncpy(temp1, srcStr + srcTagMax + 2, srcCodeMax);
+        srcCode = token(temp1);
+        strncpy(temp2, srcStr + srcTagMax + 2 + srcCodeMax + 2, srcOperandMax);
+        srcOperand = token(temp2);
+
         srcOper = atoi(srcOperand);
-//        printf("%s\n", srcCode);
         if(strncmp(srcCode, "START", 5) == 0)
         {
             locctr = srcOper;
@@ -237,8 +226,8 @@ int main()
 //                sum += srcCode[i];
 //            }
 //            sum %= 10;
-            if(srcTag[0] != 32) {
-                keyTemp = key(srcTag, srcTagMax);
+            if(srcTag != NULL) {
+                keyTemp = key(srcTag);
 //                printf("key is %d\n", keyTemp);
                 if(!symtabFind(keyTemp, srcTag))
                 {
@@ -248,10 +237,10 @@ int main()
                 {
                     printf("輸入檔有重複符號\n");
                 }
-//                symtabPrint(symtabHeader[keyTemp]);
+                symtabPrint(symtabHeader[keyTemp]);
             }
 
-            ptr = optabHeader[key(srcCode, srcCodeMax)];
+            ptr = optabHeader[key(srcCode)];
             if(strncmp(srcCode, "WORD", 4) == 0)
             {
                 locctr += 3;
