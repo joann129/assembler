@@ -11,6 +11,8 @@
 #define srcTagMax 6
 #define srcCodeMax 6
 #define srcOperandMax 8
+#define srcExtendTagIndex 7
+#define srcOperTagIndex 15
 
 struct optab_Node
 {
@@ -92,11 +94,6 @@ void optabCreate(void)
     {
         fscanf(fp_Optab, "%s %s %x %s", name, format, &opcode, info);
         if(feof(fp_Optab) != 0) break;
-//        for(i = 0; i < strlen(name); i++)
-//        {
-//            sum += name[i];
-//        }
-//        sum %= 10;
         ptr = optabHeader[key(name)];
         while(ptr->next != NULL)
         {
@@ -128,7 +125,7 @@ void symtabPrint(symtab_node * head)
         ptr = head->next;
         while(ptr != NULL)
         {
-            printf("%6s %04d\n", ptr->name, ptr->loc);
+            printf("%6s %04X\n", ptr->name, ptr->loc);
             ptr = ptr->next;
         }
     }
@@ -185,8 +182,8 @@ int main()
     char srcStr[srcMax], temp[10], temp1[10], temp2[10];
 //    , srcTag[20], srcCode[20], srcOperand[20];
     char *srcTag, *srcCode, *srcOperand;
-    int locctr, startLoc;
-    int flag = 0, srcOper, keyTemp;
+    int locctr = 0, startLoc;
+    int flag = 0, srcOper, keyTemp, i;
     optab_node * ptr;
     while(fgets(srcStr, srcMax, fp_input) != NULL)
     {
@@ -214,18 +211,12 @@ int main()
             continue;
 //            printf("%d\n", locctr);
         }
-        else
-        {
-            locctr = 0;
-        }
+//        else
+//        {
+//            locctr = 0;
+//        }
         if(strcmp(srcCode, "END") != 0)
         {
-
-//            for(i = 0; i < strlen(srcCode); i++)
-//            {
-//                sum += srcCode[i];
-//            }
-//            sum %= 10;
             if(srcTag != NULL) {
                 keyTemp = key(srcTag);
 //                printf("key is %d\n", keyTemp);
@@ -237,42 +228,59 @@ int main()
                 {
                     printf("輸入檔有重複符號\n");
                 }
-                symtabPrint(symtabHeader[keyTemp]);
             }
 
-            ptr = optabHeader[key(srcCode)];
-            if(strncmp(srcCode, "WORD", 4) == 0)
+
+            if(!strcmp(srcCode, "WORD"))
             {
                 locctr += 3;
             }
-            else if(strncmp(srcCode, "RESW", 4) == 0)
+            else if(!strcmp(srcCode, "RESW"))
             {
                 locctr += 3 * srcOper;
             }
-            else if(strncmp(srcCode, "RESB", 4) == 0)
+            else if(!strcmp(srcCode, "RESB"))
             {
                 locctr += srcOper;
             }
-            else if(strncmp(srcCode, "BYTE", 4) == 0)
+            else if(!strcmp(srcCode, "BYTE"))
             {
+                if(*srcOperand == 'X') {
+                    locctr += (strlen(srcOperand) - 3) / 2;
+                }
 
-            }
-            while(ptr->next != NULL)
-            {
-                if(strncmp(ptr->name, srcCode, strlen(ptr->name)) == 0)
+            }else if(srcStr[srcExtendTagIndex] == '+') {
+                locctr += 4;
+            }else{
+                ptr = optabHeader[key(srcCode)];
+                while(ptr != NULL)
                 {
-                    locctr += 3;
-                    break;
-                }
-                else
-                {
-                    ptr = ptr->next;
+//                    printf("%s %s\n", ptr->name, srcCode);
+                    if(!strcmp(ptr->name, srcCode))
+                    {
+                        if(!strcmp(ptr->format, "1")) {
+                            locctr += 1;
+                        }else if(!strcmp(ptr->format, "2")) {
+                            locctr += 2;
+                        }else{
+                            locctr += 3;
+                        }
+
+                        break;
+                    }
+                    else
+                    {
+                        ptr = ptr->next;
+                    }
                 }
             }
+
 
         }
     }
-
+    for(i = 0; i < 10; i++) {
+        symtabPrint(symtabHeader[i]);
+    }
     fclose(fp_input);
     fclose(fp_output);
     return 0;

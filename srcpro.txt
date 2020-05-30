@@ -19,6 +19,7 @@ RETADR  RESW    1
 LENGTH  RESW    1                
 BUFFER  RESB    4096             
 BUFEND  EQU     *                
+MAXLEN  EQU     BUFFND  -BUFFER  
 RDREC   CLEAR   X                
         CLEAR   A                
         CLEAR   S                
