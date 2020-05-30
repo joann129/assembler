@@ -7,12 +7,14 @@
 #define opcodeFormatyMax 4
 #define opcodeInfoMax 6
 #define symtabNameMax 7
+#define littabNameMax 9
 #define srcMax 33
 #define srcTagMax 6
 #define srcCodeMax 6
 #define srcOperandMax 8
 #define srcExtendTagIndex 7
 #define srcOperTagIndex 15
+#define srcOperatorIndex 24
 
 struct optab_Node
 {
@@ -25,13 +27,23 @@ struct optab_Node
 typedef struct optab_Node optab_node;
 optab_node * optabHeader[headerMax];
 
-struct symtab_Node{
+struct symtab_Node
+{
     char name[symtabNameMax];
     int loc;
     struct symtab_Node * next;
 };
 typedef struct symtab_Node symtab_node;
 symtab_node * symtabHeader[headerMax];
+
+struct littab_Node
+{
+    char name[littabNameMax];
+    int loc;
+    struct littab_Node * next;
+};
+typedef struct littab_Node littab_node;
+littab_node * littabHeader[headerMax];
 
 int key(char name[opcodeNameMax])
 {
@@ -54,7 +66,8 @@ optab_node * optabNewNode(void)
     return add;
 }
 
-symtab_node * symtabNewNode(void) {
+symtab_node * symtabNewNode(void)
+{
     symtab_node * add = malloc(sizeof(symtab_node));
     add->next = NULL;
     return add;
@@ -132,10 +145,12 @@ void symtabPrint(symtab_node * head)
     printf("\n");
 }
 
-void symtabInsert(int index, char name[symtabNameMax], int loc) {
+void symtabInsert(int index, char name[symtabNameMax], int loc)
+{
     symtab_node * ptr;
     ptr = symtabHeader[index];
-    while(ptr->next != NULL) {
+    while(ptr->next != NULL)
+    {
         ptr = ptr->next;
     }
     ptr->next = symtabNewNode();
@@ -144,29 +159,38 @@ void symtabInsert(int index, char name[symtabNameMax], int loc) {
     ptr->loc = loc;
 }
 
-int symtabFind(int index, char tag[srcTagMax]) {
+symtab_node * symtabFind(int index, char tag[symtabNameMax])
+{
     symtab_node * ptr = symtabHeader[index];
-    while(ptr->next != NULL) {
-        if(strncmp(ptr->name, tag, 6) == 0) {
-            return 1;
+    while(ptr != NULL)
+    {
+        if(!strcmp(ptr->name, tag))
+        {
+            return ptr;
         }
         ptr = ptr->next;
     }
-    return 0;
+    return NULL;
 }
 
-void symtabCreate(void) {
+void symtabCreate(void)
+{
     int i;
-    for(i = 0; i < headerMax; i++) {
+    for(i = 0; i < headerMax; i++)
+    {
         symtabHeader[i] = symtabNewNode();
     }
 }
 
-char *token(char temp[20]) {
+char *token(char temp[20])
+{
     char * tok;
-    if(temp[0] == ' ') {
+    if(temp[0] == ' ')
+    {
         return NULL;
-    }else{
+    }
+    else
+    {
         tok = strtok(temp, " ");
 //        printf("%s %d\n", tok, strlen(tok));
         return tok;
@@ -179,11 +203,11 @@ int main()
     symtabCreate();
     FILE * fp_input = fopen("srcpro.txt", "r");
     FILE * fp_output = fopen("intermediate.txt", "w");
-    char srcStr[srcMax], temp[10], temp1[10], temp2[10];
+    char srcStr[srcMax], temp[10], temp1[10], temp2[10], temp3[10];
 //    , srcTag[20], srcCode[20], srcOperand[20];
-    char *srcTag, *srcCode, *srcOperand;
+    char *srcTag, *srcCode, *srcOperand, *srcOperand2;
     int locctr = 0, startLoc;
-    int flag = 0, srcOper, keyTemp, i;
+    int flag = 0, srcOper, keyTemp, i, value;
     optab_node * ptr;
     while(fgets(srcStr, srcMax, fp_input) != NULL)
     {
@@ -193,13 +217,15 @@ int main()
             continue;
         }
         flag++;
-        printf("%s\n", srcStr);
+//        printf("%s\n", srcStr);
         strncpy(temp, srcStr, srcTagMax);
         srcTag = token(temp);
         strncpy(temp1, srcStr + srcTagMax + 2, srcCodeMax);
         srcCode = token(temp1);
         strncpy(temp2, srcStr + srcTagMax + 2 + srcCodeMax + 2, srcOperandMax);
         srcOperand = token(temp2);
+        strncpy(temp3, srcStr + srcTagMax + 2 + srcCodeMax + 2 + srcOperandMax + 1, srcOperandMax);
+        srcOperand2 = token(temp3);
 
         srcOper = atoi(srcOperand);
         if(strcmp(srcCode, "START") == 0)
@@ -217,12 +243,36 @@ int main()
 //        }
         if(strcmp(srcCode, "END") != 0)
         {
-            if(srcTag != NULL) {
+            if(srcTag != NULL)
+            {
                 keyTemp = key(srcTag);
 //                printf("key is %d\n", keyTemp);
-                if(!symtabFind(keyTemp, srcTag))
+                if(symtabFind(keyTemp, srcTag) == NULL)
                 {
-                    symtabInsert(keyTemp, srcTag, locctr);
+                    if(!strcmp(srcCode, "EQU"))
+                    {
+                        if(srcStr[srcOperatorIndex] == ' ')
+                        {
+                            if(!strcmp(srcOperand, "*"))
+                            {
+                                value = locctr;
+                            }
+                        }
+                        else if(srcStr[srcOperatorIndex] == '+')
+                        {
+                            value = symtabFind(key(srcOperand), srcOperand)->loc + symtabFind(key(srcOperand2), srcOperand2)->loc;
+                        }
+                        else if(srcStr[srcOperatorIndex] == '-')
+                        {
+                            value = symtabFind(key(srcOperand), srcOperand)->loc - symtabFind(key(srcOperand2), srcOperand2)->loc;
+                        }
+                        symtabInsert(keyTemp, srcTag, value);
+                    }
+                    else
+                    {
+                        symtabInsert(keyTemp, srcTag, locctr);
+                    }
+
                 }
                 else
                 {
@@ -230,7 +280,19 @@ int main()
                 }
             }
 
+            if(!strcmp(srcCode, "EQU"))
+            {
+               printf("%04X %33s \n", value, srcStr);
+                fprintf(fp_output, "%04X %33s \n", value, srcStr);
+            }
+            else
+            {
+                printf("%04X %33s \n", locctr, srcStr);
+                fprintf(fp_output, "%04X %33s \n", locctr, srcStr);
+            }
 
+
+//            printf("%X\n", locctr);
             if(!strcmp(srcCode, "WORD"))
             {
                 locctr += 3;
@@ -245,24 +307,38 @@ int main()
             }
             else if(!strcmp(srcCode, "BYTE"))
             {
-                if(*srcOperand == 'X') {
+                if(*srcOperand == 'X')
+                {
                     locctr += (strlen(srcOperand) - 3) / 2;
                 }
 
-            }else if(srcStr[srcExtendTagIndex] == '+') {
+            }
+            else if(srcStr[srcExtendTagIndex] == '+')
+            {
                 locctr += 4;
-            }else{
+            }
+            else if(!strcmp(srcCode, "EQU"))
+            {
+
+            }
+            else
+            {
                 ptr = optabHeader[key(srcCode)];
                 while(ptr != NULL)
                 {
 //                    printf("%s %s\n", ptr->name, srcCode);
                     if(!strcmp(ptr->name, srcCode))
                     {
-                        if(!strcmp(ptr->format, "1")) {
+                        if(!strcmp(ptr->format, "1"))
+                        {
                             locctr += 1;
-                        }else if(!strcmp(ptr->format, "2")) {
+                        }
+                        else if(!strcmp(ptr->format, "2"))
+                        {
                             locctr += 2;
-                        }else{
+                        }
+                        else
+                        {
                             locctr += 3;
                         }
 
@@ -275,10 +351,16 @@ int main()
                 }
             }
 
+            if(srcStr[srcOperTagIndex] == '=')
+            {
+
+            }
+
 
         }
-    }
-    for(i = 0; i < 10; i++) {
+    }//while
+    for(i = 0; i < 10; i++)
+    {
         symtabPrint(symtabHeader[i]);
     }
     fclose(fp_input);
