@@ -67,7 +67,7 @@ symlit_node * symlitNewNode(void)
     return add;
 }
 
-void optabPrint(optab_node * head)
+void optabPrint(optab_node * head, int hash, int * row)
 {
     optab_node * ptr;
     if(head->next == NULL)
@@ -78,18 +78,17 @@ void optabPrint(optab_node * head)
     {
         ptr = head->next;
         while(ptr != NULL)
-        {
-            printf("%6s %3s %02X %5s\n", ptr->name, ptr->format, ptr->opcode, ptr->info);
+        {   (*row)++;
+            printf("%2d%5d%7s%7s    %02X     %s\n", *row, hash, ptr->name, ptr->format, ptr->opcode, ptr->info);
             ptr = ptr->next;
         }
     }
-    printf("\n");
 }
 
 void optabCreate(void)
 {
     optab_node* ptr;
-    int i;
+    int i, row = 0;
     for(i = 0; i < headerMax; i ++)
     {
         optabHeader[i] = optabNewNode();
@@ -115,29 +114,27 @@ void optabCreate(void)
         strcpy(ptr->info, info);
     }
     fclose(fp_Optab);
+    printf("%15s\nRow Hash Op_Name Format OpCode info\n", "OPTAB");
     for(i = 0; i < headerMax; i++)
     {
-        optabPrint(optabHeader[i]);
+        optabPrint(optabHeader[i], i, &row);
     }
+    printf("\n");
 }
 
-void symlitPrint(symlit_node * head)
+void symlitPrint(symlit_node * head, int hash, int * row)
 {
     symlit_node * ptr;
-    if(head->next == NULL)
-    {
-        printf("empty\n");
-    }
-    else
+    if(head->next != NULL)
     {
         ptr = head->next;
         while(ptr != NULL)
         {
-            printf("%6s %04X\n", ptr->name, ptr->loc);
+            (*row)++;
+            printf("%2d%5d%8s   %04X\n", *row, hash, ptr->name, ptr->loc);
             ptr = ptr->next;
         }
     }
-    printf("\n");
 }
 
 void symlitInsert(symlit_node * head, char name[symtabNameMax], int loc)
@@ -189,7 +186,8 @@ void littabCreate(void)
 void littabAddressing(FILE* fp, symlit_node * head)
 {
     symlit_node * ptr;
-    if(head->next == NULL) {
+    if(head->next == NULL)
+    {
         return;
     }
     else
@@ -202,8 +200,8 @@ void littabAddressing(FILE* fp, symlit_node * head)
         {
             ptr->loc = locctr;
             ptr->addressFlag++;
-            printf("%04X *      =%s\n", ptr->loc, ptr->name);
-            fprintf(fp, "%04X *      =%s\n", ptr->loc, ptr->name);
+//            printf("%04X *      =%-25s\n", ptr->loc, ptr->name);
+            fprintf(fp, "%04X *      =%-25s\n", ptr->loc, ptr->name);
             if(ptr->name[0] == 'X')
             {
                 locctr += (strlen(ptr->name) - 3) / 2;
@@ -234,14 +232,15 @@ char *token(char temp[20])
 
 int main()
 {
+//    system("chcp 65001");
     optabCreate();
     symtabCreate();
     littabCreate();
     FILE * fp_input = fopen("srcpro.txt", "r");
     FILE * fp_output = fopen("intermediate.txt", "w");
-    char srcStr[srcMax], temp[10], temp1[10], temp2[10], temp3[10];
+    char srcStr[srcMax+5], temp[10], temp1[10], temp2[10], temp3[10];
     char *srcTag, *srcCode, *srcOperand, *srcOperand2;
-    int flag = 0, srcOper, keyTemp, i, value;
+    int flag = 0, srcOper, keyTemp, i, value, row = 0;
     optab_node * ptr;
     while(fgets(srcStr, srcMax, fp_input) != NULL)
     {
@@ -266,6 +265,7 @@ int main()
         {
             locctr = srcOper;
             startLoc = locctr;
+//            printf("%04X %s\n", locctr, srcStr);
             fprintf(fp_output, "%04X %s\n", locctr, srcStr);
             continue;
         }
@@ -310,19 +310,19 @@ int main()
                 }
                 else
                 {
-                    printf("øÈ§J¿…¶≥≠´Ω∆≤≈∏π\n");
+                    printf("Ëº∏ÂÖ•Ê™îÊúâÈáçË§áÁ¨¶Ëôü\n");
                 }
             }
 
             if(!strcmp(srcCode, "EQU"))
             {
-                printf("%04X %33s \n", value, srcStr);
+//                printf("%04X %33s\n", value, srcStr);
                 fprintf(fp_output, "%04X %s \n", value, srcStr);
             }
             else
             {
-                printf("%04X %s \n", locctr, srcStr);
-                fprintf(fp_output, "%04X %s \n", locctr, srcStr);
+//                printf("%04X %s\n", locctr, srcStr);
+                fprintf(fp_output, "%04X %s\n", locctr, srcStr);
             }
 
 
@@ -406,19 +406,62 @@ int main()
             }
 
 
-        }else{ //end
-            for(i = 0; i < headerMax; i++) {
+        }
+        else   //end
+        {
+            for(i = 0; i < headerMax; i++)
+            {
                 littabAddressing(fp_output, littabHeader[i]);
             }
         }
     }//while
+    printf("%15s\nRow Hash SymName Address\n", "SYMTAB");
     for(i = 0; i < headerMax; i++)
     {
-        symlitPrint(symtabHeader[i]);
+        symlitPrint(symtabHeader[i], i, &row);
     }
+    printf("\n\n%15s\nRow Hash SymName Address\n", "LITTAB");
+    row = 0;
     for(i = 0; i < headerMax; i++)
     {
-        symlitPrint(littabHeader[i]);
+        symlitPrint(littabHeader[i], i, &row);
+    }
+    printf("\n\n");
+    row = 0;
+    fclose(fp_input);
+    fclose(fp_output);
+//    printf("%d\n", flag);
+    fp_input = fopen("intermediate.txt", "r");
+    fp_output = fopen("D0746323_OBJFILE.txt", "w");
+    int address;
+    while(1)
+    {
+
+        if(flag) {
+            flag--;
+            continue;
+        }
+        flag++;
+        row++;
+        if(feof(fp_input) != 0) break;
+        fscanf(fp_input, "%X", &address);
+        fgets(srcStr, srcMax, fp_input);
+//        printf("%d %04X %s\n", row, address, srcStr);
+        strncpy(temp, srcStr + 1, srcTagMax);
+        srcTag = token(temp);
+        strncpy(temp1, srcStr + 1 + srcTagMax + 2, srcCodeMax);
+        srcCode = token(temp1);
+        strncpy(temp2, srcStr + 1 + srcTagMax + 2 + srcCodeMax + 2, srcOperandMax);
+        srcOperand = token(temp2);
+        strncpy(temp3, srcStr + 1 + srcTagMax + 2 + srcCodeMax + 2 + srcOperandMax + 1, srcOperandMax);
+        srcOperand2 = token(temp3);
+        if(!strcmp(srcCode, "START")){
+            fprintf(fp_output, "%d %04X %s\n", row, address, srcStr);
+            printf("%d %04X %s\n", row, address, srcStr);
+            continue;
+        }
+
+
     }
     fclose(fp_input);
     fclose(fp_output);
