@@ -6,8 +6,7 @@
 #define opcodeNameMax 7
 #define opcodeFormatyMax 4
 #define opcodeInfoMax 6
-#define symtabNameMax 7
-#define littabNameMax 9
+#define symtabNameMax 9
 #define srcMax 33
 #define srcTagMax 6
 #define srcCodeMax 6
@@ -16,6 +15,7 @@
 #define srcOperTagIndex 15
 #define srcOperatorIndex 24
 
+int locctr = 0, startLoc;
 struct optab_Node
 {
     char name[opcodeNameMax];
@@ -31,19 +31,12 @@ struct symtab_Node
 {
     char name[symtabNameMax];
     int loc;
+    int addressFlag;
     struct symtab_Node * next;
 };
 typedef struct symtab_Node symtab_node;
 symtab_node * symtabHeader[headerMax];
-
-struct littab_Node
-{
-    char name[littabNameMax];
-    int loc;
-    struct littab_Node * next;
-};
-typedef struct littab_Node littab_node;
-littab_node * littabHeader[headerMax];
+symtab_node * littabHeader[headerMax];
 
 int key(char name[opcodeNameMax])
 {
@@ -66,9 +59,10 @@ optab_node * optabNewNode(void)
     return add;
 }
 
-symtab_node * symtabNewNode(void)
+symtab_node * symlitNewNode(void)
 {
     symtab_node * add = malloc(sizeof(symtab_node));
+    add->addressFlag = 0;
     add->next = NULL;
     return add;
 }
@@ -105,8 +99,9 @@ void optabCreate(void)
     char name[opcodeNameMax], format[opcodeFormatyMax], info[opcodeInfoMax];
     while(1)
     {
-        fscanf(fp_Optab, "%s %s %x %s", name, format, &opcode, info);
         if(feof(fp_Optab) != 0) break;
+        fscanf(fp_Optab, "%s %s %x %s", name, format, &opcode, info);
+
         ptr = optabHeader[key(name)];
         while(ptr->next != NULL)
         {
@@ -126,7 +121,7 @@ void optabCreate(void)
     }
 }
 
-void symtabPrint(symtab_node * head)
+void symlitPrint(symtab_node * head)
 {
     symtab_node * ptr;
     if(head->next == NULL)
@@ -145,23 +140,23 @@ void symtabPrint(symtab_node * head)
     printf("\n");
 }
 
-void symtabInsert(int index, char name[symtabNameMax], int loc)
+void symlitInsert(symtab_node * head, char name[symtabNameMax], int loc)
 {
     symtab_node * ptr;
-    ptr = symtabHeader[index];
+    ptr = head;
     while(ptr->next != NULL)
     {
         ptr = ptr->next;
     }
-    ptr->next = symtabNewNode();
+    ptr->next = symlitNewNode();
     ptr = ptr->next;
     strcpy(ptr->name, name);
     ptr->loc = loc;
 }
 
-symtab_node * symtabFind(int index, char tag[symtabNameMax])
+symtab_node * symlitFind(symtab_node * head, char tag[symtabNameMax])
 {
-    symtab_node * ptr = symtabHeader[index];
+    symtab_node * ptr = head;
     while(ptr != NULL)
     {
         if(!strcmp(ptr->name, tag))
@@ -178,7 +173,48 @@ void symtabCreate(void)
     int i;
     for(i = 0; i < headerMax; i++)
     {
-        symtabHeader[i] = symtabNewNode();
+        symtabHeader[i] = symlitNewNode();
+    }
+}
+
+void littabCreate(void)
+{
+    int i;
+    for(i = 0; i < headerMax; i++)
+    {
+        littabHeader[i] = symlitNewNode();
+    }
+}
+
+void littabAddressing(FILE* fp, symtab_node * head)
+{
+    symtab_node * ptr;
+    if(head->next == NULL) {
+        return;
+    }
+    else
+    {
+        ptr = head->next;
+    }
+    while(ptr != NULL)
+    {
+        if(!ptr->addressFlag)
+        {
+            ptr->loc = locctr;
+            printf("%04X *      =%s\n", ptr->loc, ptr->name);
+            fprintf(fp, "%04X *      =%s\n", ptr->loc, ptr->name);
+            if(ptr->name[0] == 'X')
+            {
+                locctr += (strlen(ptr->name) - 3) / 2;
+            }
+            else if(ptr->name[0] == 'C')
+            {
+                locctr += strlen(ptr->name) - 3;
+            }
+            ptr->loc = locctr;
+
+        }
+        ptr= ptr->next;
     }
 }
 
@@ -201,12 +237,11 @@ int main()
 {
     optabCreate();
     symtabCreate();
+    littabCreate();
     FILE * fp_input = fopen("srcpro.txt", "r");
     FILE * fp_output = fopen("intermediate.txt", "w");
     char srcStr[srcMax], temp[10], temp1[10], temp2[10], temp3[10];
-//    , srcTag[20], srcCode[20], srcOperand[20];
     char *srcTag, *srcCode, *srcOperand, *srcOperand2;
-    int locctr = 0, startLoc;
     int flag = 0, srcOper, keyTemp, i, value;
     optab_node * ptr;
     while(fgets(srcStr, srcMax, fp_input) != NULL)
@@ -228,14 +263,12 @@ int main()
         srcOperand2 = token(temp3);
 
         srcOper = atoi(srcOperand);
-        if(strcmp(srcCode, "START") == 0)
+        if(!strcmp(srcCode, "START"))
         {
             locctr = srcOper;
             startLoc = locctr;
-            fputs(srcStr, fp_output);
-            fputs("\n", fp_output);
+            fprintf(fp_output, "%04X %s\n", locctr, srcStr);
             continue;
-//            printf("%d\n", locctr);
         }
 //        else
 //        {
@@ -247,7 +280,7 @@ int main()
             {
                 keyTemp = key(srcTag);
 //                printf("key is %d\n", keyTemp);
-                if(symtabFind(keyTemp, srcTag) == NULL)
+                if(symlitFind(symtabHeader[keyTemp], srcTag) == NULL)
                 {
                     if(!strcmp(srcCode, "EQU"))
                     {
@@ -260,17 +293,19 @@ int main()
                         }
                         else if(srcStr[srcOperatorIndex] == '+')
                         {
-                            value = symtabFind(key(srcOperand), srcOperand)->loc + symtabFind(key(srcOperand2), srcOperand2)->loc;
+                            value = symlitFind(symtabHeader[key(srcOperand)], srcOperand)->loc +
+                                    symlitFind(symtabHeader[key(srcOperand2)], srcOperand2)->loc;
                         }
                         else if(srcStr[srcOperatorIndex] == '-')
                         {
-                            value = symtabFind(key(srcOperand), srcOperand)->loc - symtabFind(key(srcOperand2), srcOperand2)->loc;
+                            value = symlitFind(symtabHeader[key(srcOperand)], srcOperand)->loc -
+                                    symlitFind(symtabHeader[key(srcOperand2)], srcOperand2)->loc;
                         }
-                        symtabInsert(keyTemp, srcTag, value);
+                        symlitInsert(symtabHeader[keyTemp], srcTag, value);
                     }
                     else
                     {
-                        symtabInsert(keyTemp, srcTag, locctr);
+                        symlitInsert(symtabHeader[keyTemp], srcTag, locctr);
                     }
 
                 }
@@ -282,13 +317,13 @@ int main()
 
             if(!strcmp(srcCode, "EQU"))
             {
-               printf("%04X %33s \n", value, srcStr);
-                fprintf(fp_output, "%04X %33s \n", value, srcStr);
+                printf("%04X %33s \n", value, srcStr);
+                fprintf(fp_output, "%04X %s \n", value, srcStr);
             }
             else
             {
-                printf("%04X %33s \n", locctr, srcStr);
-                fprintf(fp_output, "%04X %33s \n", locctr, srcStr);
+                printf("%04X %s \n", locctr, srcStr);
+                fprintf(fp_output, "%04X %s \n", locctr, srcStr);
             }
 
 
@@ -311,6 +346,10 @@ int main()
                 {
                     locctr += (strlen(srcOperand) - 3) / 2;
                 }
+                else if(*srcOperand == 'C')
+                {
+                    locctr += strlen(srcOperand) - 3;
+                }
 
             }
             else if(srcStr[srcExtendTagIndex] == '+')
@@ -320,6 +359,13 @@ int main()
             else if(!strcmp(srcCode, "EQU"))
             {
 
+            }
+            else if(!strcmp(srcCode, "LTORG"))
+            {
+                for(i = 0; i < headerMax; i++)
+                {
+                    littabAddressing(fp_output, littabHeader[i]);
+                }
             }
             else
             {
@@ -353,7 +399,11 @@ int main()
 
             if(srcStr[srcOperTagIndex] == '=')
             {
-
+                keyTemp = key(srcOperand);
+                if(symlitFind(littabHeader[keyTemp], srcOperand) == NULL)
+                {
+                    symlitInsert(littabHeader[key(srcOperand)], srcOperand, 0);
+                }
             }
 
 
@@ -361,7 +411,11 @@ int main()
     }//while
     for(i = 0; i < 10; i++)
     {
-        symtabPrint(symtabHeader[i]);
+        symlitPrint(symtabHeader[i]);
+    }
+    for(i = 0; i < 10; i++)
+    {
+        symlitPrint(littabHeader[i]);
     }
     fclose(fp_input);
     fclose(fp_output);
