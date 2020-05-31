@@ -7,6 +7,7 @@
 #define opcodeFormatyMax 4
 #define opcodeInfoMax 6
 #define symtabNameMax 9
+#define regtabNameMax 3
 #define srcMax 33
 #define srcTagMax 6
 #define srcCodeMax 6
@@ -16,6 +17,12 @@
 #define srcOperatorIndex 24
 
 int locctr = 0, startLoc;
+struct regtab
+{
+    char name[regtabNameMax];
+    int code;
+};
+struct regtab reg[9] = { {"A",0}, {"X",1}, {"L",2}, {"PC",8}, {"SW",9}, {"B",3}, {"S",4}, {"T",5}, {"F",6}, };
 struct optab_Node
 {
     char name[opcodeNameMax];
@@ -78,7 +85,8 @@ void optabPrint(optab_node * head, int hash, int * row)
     {
         ptr = head->next;
         while(ptr != NULL)
-        {   (*row)++;
+        {
+            (*row)++;
             printf("%2d%5d%7s%7s    %02X     %s\n", *row, hash, ptr->name, ptr->format, ptr->opcode, ptr->info);
             ptr = ptr->next;
         }
@@ -215,6 +223,16 @@ void littabAddressing(FILE* fp, symlit_node * head)
     }
 }
 
+void regtabPrint(void)
+{
+    printf("%14s\nRow REG_Name REG_Code\n", "REGTAB");
+    for(int row = 1; row <= 9; row++)
+    {
+        printf("%2d%7s%8d\n", row, reg[row-1].name, reg[row-1].code);
+    }
+    printf("\n");
+}
+
 char *token(char temp[20])
 {
     char * tok;
@@ -233,6 +251,7 @@ char *token(char temp[20])
 int main()
 {
 //    system("chcp 65001");
+    regtabPrint();
     optabCreate();
     symtabCreate();
     littabCreate();
@@ -426,7 +445,7 @@ int main()
     {
         symlitPrint(littabHeader[i], i, &row);
     }
-    printf("\n\n");
+    printf("\n\n%40s\nRow addr%6s%47s\n", "Original Program <literal pool>", "Code", "Target Address");
     row = 0;
     fclose(fp_input);
     fclose(fp_output);
@@ -437,7 +456,8 @@ int main()
     while(1)
     {
 
-        if(flag) {
+        if(flag)
+        {
             flag--;
             continue;
         }
@@ -455,9 +475,10 @@ int main()
         srcOperand = token(temp2);
         strncpy(temp3, srcStr + 1 + srcTagMax + 2 + srcCodeMax + 2 + srcOperandMax + 1, srcOperandMax);
         srcOperand2 = token(temp3);
-        if(!strcmp(srcCode, "START")){
-            fprintf(fp_output, "%d %04X %s\n", row, address, srcStr);
-            printf("%d %04X %s\n", row, address, srcStr);
+        if(!strcmp(srcCode, "START"))
+        {
+            fprintf(fp_output, "H%-6s%06X%06X\n", srcTag, startLoc, locctr);
+            printf("%2d  %04X %s\n", row, address, srcStr);
             continue;
         }
 
