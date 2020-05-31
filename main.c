@@ -201,6 +201,7 @@ void littabAddressing(FILE* fp, symlit_node * head)
         if(!ptr->addressFlag)
         {
             ptr->loc = locctr;
+            ptr->addressFlag++;
             printf("%04X *      =%s\n", ptr->loc, ptr->name);
             fprintf(fp, "%04X *      =%s\n", ptr->loc, ptr->name);
             if(ptr->name[0] == 'X')
@@ -405,13 +406,17 @@ int main()
             }
 
 
+        }else{ //end
+            for(i = 0; i < headerMax; i++) {
+                littabAddressing(fp_output, littabHeader[i]);
+            }
         }
     }//while
-    for(i = 0; i < 10; i++)
+    for(i = 0; i < headerMax; i++)
     {
         symlitPrint(symtabHeader[i]);
     }
-    for(i = 0; i < 10; i++)
+    for(i = 0; i < headerMax; i++)
     {
         symlitPrint(littabHeader[i]);
     }
