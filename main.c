@@ -27,16 +27,16 @@ struct optab_Node
 typedef struct optab_Node optab_node;
 optab_node * optabHeader[headerMax];
 
-struct symtab_Node
+struct symlit_Node
 {
     char name[symtabNameMax];
     int loc;
     int addressFlag;
-    struct symtab_Node * next;
+    struct symlit_Node * next;
 };
-typedef struct symtab_Node symtab_node;
-symtab_node * symtabHeader[headerMax];
-symtab_node * littabHeader[headerMax];
+typedef struct symlit_Node symlit_node;
+symlit_node * symtabHeader[headerMax];
+symlit_node * littabHeader[headerMax];
 
 int key(char name[opcodeNameMax])
 {
@@ -59,9 +59,9 @@ optab_node * optabNewNode(void)
     return add;
 }
 
-symtab_node * symlitNewNode(void)
+symlit_node * symlitNewNode(void)
 {
-    symtab_node * add = malloc(sizeof(symtab_node));
+    symlit_node * add = malloc(sizeof(symlit_node));
     add->addressFlag = 0;
     add->next = NULL;
     return add;
@@ -121,9 +121,9 @@ void optabCreate(void)
     }
 }
 
-void symlitPrint(symtab_node * head)
+void symlitPrint(symlit_node * head)
 {
-    symtab_node * ptr;
+    symlit_node * ptr;
     if(head->next == NULL)
     {
         printf("empty\n");
@@ -140,9 +140,9 @@ void symlitPrint(symtab_node * head)
     printf("\n");
 }
 
-void symlitInsert(symtab_node * head, char name[symtabNameMax], int loc)
+void symlitInsert(symlit_node * head, char name[symtabNameMax], int loc)
 {
-    symtab_node * ptr;
+    symlit_node * ptr;
     ptr = head;
     while(ptr->next != NULL)
     {
@@ -154,9 +154,9 @@ void symlitInsert(symtab_node * head, char name[symtabNameMax], int loc)
     ptr->loc = loc;
 }
 
-symtab_node * symlitFind(symtab_node * head, char tag[symtabNameMax])
+symlit_node * symlitFind(symlit_node * head, char tag[symtabNameMax])
 {
-    symtab_node * ptr = head;
+    symlit_node * ptr = head;
     while(ptr != NULL)
     {
         if(!strcmp(ptr->name, tag))
@@ -186,9 +186,9 @@ void littabCreate(void)
     }
 }
 
-void littabAddressing(FILE* fp, symtab_node * head)
+void littabAddressing(FILE* fp, symlit_node * head)
 {
-    symtab_node * ptr;
+    symlit_node * ptr;
     if(head->next == NULL) {
         return;
     }
@@ -211,8 +211,6 @@ void littabAddressing(FILE* fp, symtab_node * head)
             {
                 locctr += strlen(ptr->name) - 3;
             }
-            ptr->loc = locctr;
-
         }
         ptr= ptr->next;
     }
