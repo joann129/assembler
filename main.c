@@ -129,7 +129,19 @@ void optabCreate(void)
     }
     printf("\n");
 }
-
+optab_node * optabFind(optab_node * head, char srcCode[srcCodeMax+1])
+{
+    optab_node * ptr = head;
+    while(ptr != NULL)
+    {
+        if(!strcmp(ptr->name, srcCode))
+        {
+            return ptr;
+        }
+        ptr = ptr->next;
+    }
+    return NULL;
+}
 void symlitPrint(symlit_node * head, int hash, int * row)
 {
     symlit_node * ptr;
@@ -374,10 +386,10 @@ int main()
             {
                 locctr += 4;
             }
-            else if(!strcmp(srcCode, "EQU"))
-            {
-
-            }
+//            else if(!strcmp(srcCode, "EQU"))
+//            {
+//
+//            }
             else if(!strcmp(srcCode, "LTORG"))
             {
                 for(i = 0; i < headerMax; i++)
@@ -387,32 +399,23 @@ int main()
             }
             else
             {
-                ptr = optabHeader[key(srcCode)];
-                while(ptr != NULL)
+                ptr = optabFind(optabHeader[key(srcCode)], srcCode);
+                if(ptr != NULL)
                 {
-//                    printf("%s %s\n", ptr->name, srcCode);
-                    if(!strcmp(ptr->name, srcCode))
+                    if(!strcmp(ptr->format, "1"))
                     {
-                        if(!strcmp(ptr->format, "1"))
-                        {
-                            locctr += 1;
-                        }
-                        else if(!strcmp(ptr->format, "2"))
-                        {
-                            locctr += 2;
-                        }
-                        else
-                        {
-                            locctr += 3;
-                        }
-
-                        break;
+                        locctr += 1;
+                    }
+                    else if(!strcmp(ptr->format, "2"))
+                    {
+                        locctr += 2;
                     }
                     else
                     {
-                        ptr = ptr->next;
+                        locctr += 3;
                     }
                 }
+
             }
 
             if(srcStr[srcOperTagIndex] == '=')
@@ -428,6 +431,7 @@ int main()
         }
         else   //end
         {
+            fprintf(fp_output, "%04X %s\n", locctr, srcStr);
             for(i = 0; i < headerMax; i++)
             {
                 littabAddressing(fp_output, littabHeader[i]);
@@ -450,9 +454,11 @@ int main()
     fclose(fp_input);
     fclose(fp_output);
 //    printf("%d\n", flag);
+
     fp_input = fopen("intermediate.txt", "r");
     fp_output = fopen("D0746323_OBJFILE.txt", "w");
-    int address;
+    int address, ta = 0;
+//    char ta[8];
     while(1)
     {
 
@@ -463,8 +469,8 @@ int main()
         }
         flag++;
         row++;
-        if(feof(fp_input) != 0) break;
         fscanf(fp_input, "%X", &address);
+        if(feof(fp_input) != 0) break;  //warning
         fgets(srcStr, srcMax, fp_input);
 //        printf("%d %04X %s\n", row, address, srcStr);
         strncpy(temp, srcStr + 1, srcTagMax);
@@ -482,9 +488,68 @@ int main()
             continue;
         }
 
+        if(strcmp(srcCode, "END") != 0)
+        {
 
+            ptr = optabFind(optabHeader[key(srcCode)], srcCode);
+            if(ptr != NULL)
+            {
+                //code
+                if(srcStr[srcOperTagIndex] == '#')
+                {
+                    ta += (ptr->opcode + 1) * (int)pow(10,6);
+                }
+                else if(srcStr[srcOperTagIndex] == '@')
+                {
+                    ta += (ptr->opcode + 2) * (int)pow(10,6);
+                }
+                else
+                {
+                    ta += (ptr->opcode + 3) * (int)pow(10,6);
+                }
+            }
+            else if(srcStr[srcExtendTagIndex + 1] == '=')
+            {
+                if(*srcCode == 'C')
+                {
+                    printf("%2d  %04X %s          ", row, address, srcStr);
+                    for(i = 2; i < strlen(srcCode); i++)
+                    {
+                        if(*(srcCode + i) == '\'') break;
+                        printf("%X", *(srcCode + i));
+                    }
+                    printf("\n");
+                    continue;
+                }
+                else if(*srcCode == 'X')
+                {
+                    printf("%2d  %04X %s          ", row, address, srcStr);
+                    for(i = 2; i < strlen(srcCode); i++)
+                    {
+                        if(*(srcCode + i) == '\'') break;
+                        printf("%X", *(srcCode + i) - 48);
+                    }
+                    printf("\n");
+                    continue;
+                }
+            }
+            else if(!strcmp(srcCode, "BYTE"))
+            {
+                printf("%2d  %04X %s          ", row, address, srcStr);
+                for(i = 2; i < strlen(srcOperand); i++)
+                {
+                    if(*(srcOperand + i) == '\'') break;
+                    printf("%C", *(srcOperand + i));
+                }
+                printf("\n");
+                continue;
+            }
+        }
     }
-    fclose(fp_input);
-    fclose(fp_output);
-    return 0;
+
+
+
+fclose(fp_input);
+fclose(fp_output);
+return 0;
 }

@@ -45,4 +45,5 @@
 106E         TIXR    T               
 1070         JLT     WLOOP           
 1073         RSUB                    
+1076         END     FIRST           
 1076 *      =X'05'                    
