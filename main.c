@@ -455,9 +455,12 @@ int main()
     fclose(fp_output);
 //    printf("%d\n", flag);
 
+//--------------------------------------------------
     fp_input = fopen("intermediate.txt", "r");
     fp_output = fopen("D0746323_OBJFILE.txt", "w");
     int address, ta = 0;
+    symlit_node * base = NULL;
+    int plus;
 //    char ta[8];
     while(1)
     {
@@ -495,18 +498,83 @@ int main()
             if(ptr != NULL)
             {
                 //code
-                if(srcStr[srcOperTagIndex] == '#')
+                if(!strcmp(ptr->format, "3/4"))
                 {
-                    ta += (ptr->opcode + 1) * (int)pow(10,6);
+//                    printf("code:%X\n", ptr->opcode);
+                    if(srcStr[srcExtendTagIndex+1] == '+')  //4
+                    {
+                        if(srcStr[srcOperTagIndex + 1] == '#')
+                        {
+                            ta += (ptr->opcode + 1) * (int)pow(16,6) ;
+                        }
+                        else if(srcStr[srcOperTagIndex + 1] == '@')
+                        {
+                            ta += (ptr->opcode + 2) * (int)pow(16,6);
+                        }
+                        else
+                        {
+                            ta += (ptr->opcode + 3) * (int)pow(16,6);
+                        }
+                        ta += 1 * (int)pow(16,5);
+                    }else{  //3
+                        if(srcStr[srcOperTagIndex + 1] == '#')
+                        {
+                            ta += (ptr->opcode + 1) * (int)pow(16,4);
+                        }
+                        else if(srcStr[srcOperTagIndex + 1] == 64)
+                        {
+                            ta += (ptr->opcode + 2) * (int)pow(16,4);
+                        }
+                        else
+                        {
+                            ta += (ptr->opcode + 3) * (int)pow(16,4);
+                        }
+                        if(srcOperand2 != NULL) {       //nixbpe
+                            if(!strcmp(srcOperand2, "X"))
+                            {
+                                ta += 8 * (int)pow(16,3);
+                            }
+                        }
+//                        printf("code is %X\n", ptr->opcode);
+                        if(srcStr[srcOperTagIndex + 1] == '#') {
+                            ta += atoi(srcOperand);
+                        }else if(srcStr[srcOperTagIndex+1] == '=') {
+                        }
+                        else if(strcmp(ptr->info, "null") != 0) {
+//                            printf("symcode is %X\n", symlitFind(symtabHeader[key(srcOperand)], srcOperand)->loc);
+                            symlitFind(symtabHeader[key(srcOperand)], srcOperand)->loc;
+                            if(base == NULL)
+                            {
+                                ta += 2 * (int)pow(16,3);
+                                ta += (symlitFind(symtabHeader[key(srcOperand)], srcOperand)->loc - address - 3) % (int)pow(16,3);
+                            }
+                            else
+                            {
+                                if((base->loc - address - 3) < symlitFind(symtabHeader[key(srcOperand)], srcOperand)->loc - address - 3)
+                                {
+                                    ta += (base->loc - address - 3) % (int)pow(16,3);
+                                }
+                                else
+                                {
+                                    ta += (symlitFind(symtabHeader[key(srcOperand)], srcOperand)->loc - address - 3) % (int)pow(16,3);
+                                }
+                            }
+                        }
+
+
+                    }
+                    printf("%s ta:%X\n", srcCode, ta);
                 }
-                else if(srcStr[srcOperTagIndex] == '@')
+                else if(!strcmp(ptr->format, "2"))
                 {
-                    ta += (ptr->opcode + 2) * (int)pow(10,6);
+                    ta += ptr->opcode * (int)pow(10,6);
                 }
-                else
-                {
-                    ta += (ptr->opcode + 3) * (int)pow(10,6);
-                }
+
+            }
+            else if(!strcmp(srcCode, "BASE"))
+            {
+                base = symlitFind(symtabHeader[key(srcOperand)], srcOperand);
+//                printf("%X\n", base->loc);
             }
             else if(srcStr[srcExtendTagIndex + 1] == '=')
             {
@@ -545,11 +613,12 @@ int main()
                 continue;
             }
         }
+        ta = 0;
     }
 
 
 
-fclose(fp_input);
-fclose(fp_output);
-return 0;
+    fclose(fp_input);
+    fclose(fp_output);
+    return 0;
 }
