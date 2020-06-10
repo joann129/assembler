@@ -516,12 +516,16 @@ int main()
                             ta += (ptr->opcode + 3) * (int)pow(16,6);
                         }
                         ta += 1 * (int)pow(16,5);
-                    }else{  //3
+                        ta += symlitFind(symtabHeader[key(srcOperand)], srcOperand)->loc;
+                        printf("%s ta:%08X\n", srcCode, ta);
+                    }
+                    else    //3
+                    {
                         if(srcStr[srcOperTagIndex + 1] == '#')
                         {
                             ta += (ptr->opcode + 1) * (int)pow(16,4);
                         }
-                        else if(srcStr[srcOperTagIndex + 1] == 64)
+                        else if(srcStr[srcOperTagIndex + 1] == '@')
                         {
                             ta += (ptr->opcode + 2) * (int)pow(16,4);
                         }
@@ -529,41 +533,79 @@ int main()
                         {
                             ta += (ptr->opcode + 3) * (int)pow(16,4);
                         }
-                        if(srcOperand2 != NULL) {       //nixbpe
+                        if(srcOperand2 != NULL)         //nixbpe
+                        {
                             if(!strcmp(srcOperand2, "X"))
                             {
                                 ta += 8 * (int)pow(16,3);
                             }
                         }
 //                        printf("code is %X\n", ptr->opcode);
-                        if(srcStr[srcOperTagIndex + 1] == '#') {
+                        if(srcStr[srcOperTagIndex + 1] == '#' && *srcOperand <= '9' && *srcOperand >= '0' )
+                        {
                             ta += atoi(srcOperand);
-                        }else if(srcStr[srcOperTagIndex+1] == '=') {
                         }
-                        else if(strcmp(ptr->info, "null") != 0) {
-//                            printf("symcode is %X\n", symlitFind(symtabHeader[key(srcOperand)], srcOperand)->loc);
-                            symlitFind(symtabHeader[key(srcOperand)], srcOperand)->loc;
+                        else if(srcStr[srcOperTagIndex+1] == '=')
+                        {
                             if(base == NULL)
                             {
                                 ta += 2 * (int)pow(16,3);
-                                ta += (symlitFind(symtabHeader[key(srcOperand)], srcOperand)->loc - address - 3) % (int)pow(16,3);
+                                ta += ((symlitFind(littabHeader[key(srcOperand)], srcOperand)->loc - address - 3) % (int)pow(16,3) );
                             }
                             else
                             {
-                                if((base->loc - address - 3) < symlitFind(symtabHeader[key(srcOperand)], srcOperand)->loc - address - 3)
+                                if(abs(symlitFind(littabHeader[key(srcOperand)], srcOperand)->loc - base->loc) < abs(symlitFind(littabHeader[key(srcOperand)], srcOperand)->loc - address - 3) && base->loc < address )
                                 {
-                                    ta += (base->loc - address - 3) % (int)pow(16,3);
+//                                    printf("= is %X\n", symlitFind(littabHeader[key(srcOperand)], srcOperand)->loc);
+                                    printf("base lit\n");
+                                    ta += (symlitFind(littabHeader[key(srcOperand)], srcOperand)->loc - base->loc) % (int)pow(16,3);
+                                    if(symlitFind(littabHeader[key(srcOperand)], srcOperand)->loc - base->loc < 0)
+                                    {
+                                        ta += 1 * (int)pow(16,3);
+                                    }
                                 }
                                 else
                                 {
-                                    ta += (symlitFind(symtabHeader[key(srcOperand)], srcOperand)->loc - address - 3) % (int)pow(16,3);
+//                                    printf("= is %X\n", symlitFind(littabHeader[key(srcOperand)], srcOperand)->loc);
+                                    ta += (symlitFind(littabHeader[key(srcOperand)], srcOperand)->loc - address - 3) % (int)pow(16,3);
+                                    if(symlitFind(littabHeader[key(srcOperand)], srcOperand)->loc - address - 3 < 0)
+                                    {
+                                        ta += 1 * (int)pow(16,3);
+                                    }
                                 }
                             }
                         }
-
-
+                        else if(strcmp(ptr->info, "null") != 0)
+                        {
+                            if(base == NULL)
+                            {
+                                ta += 2 * (int)pow(16,3);
+                                ta += (symlitFind(symtabHeader[key(srcOperand)], srcOperand)->loc - address - 3) % (int)pow(16,3) ;
+                            }
+                            else
+                            {
+                                if(abs(symlitFind(symtabHeader[key(srcOperand)], srcOperand)->loc - base->loc) < abs(symlitFind(symtabHeader[key(srcOperand)], srcOperand)->loc - address - 3) && base->loc < address )
+                                {
+                                    printf("base\n");
+                                    ta += (symlitFind(symtabHeader[key(srcOperand)], srcOperand)->loc - base->loc) % (int)pow(16,3) ;
+                                    if(symlitFind(symtabHeader[key(srcOperand)], srcOperand)->loc - base->loc < 0)
+                                    {
+                                        ta += 1 * (int)pow(16,3);
+                                    }
+                                }
+                                else
+                                {
+                                    ta += (symlitFind(symtabHeader[key(srcOperand)], srcOperand)->loc - address - 3) % (int)pow(16,3) ;
+                                    if(symlitFind(symtabHeader[key(srcOperand)], srcOperand)->loc - address - 3 < 0)
+                                    {
+                                        ta += 1 * (int)pow(16,3);
+                                    }
+                                }
+                            }
+                        }
+                        printf("%s ta:%06X\n", srcCode, ta);
                     }
-                    printf("%s ta:%X\n", srcCode, ta);
+
                 }
                 else if(!strcmp(ptr->format, "2"))
                 {
