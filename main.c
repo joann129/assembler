@@ -16,8 +16,11 @@
 #define srcOperTagIndex 15
 #define srcOperatorIndex 24
 #define regtabHeaderMax 9
+#define blockTabMax 3
 
-int locctr = 0, startLoc;
+//int blockTab[0]->length = 0,
+int use = 0;
+int startLoc;
 struct regtab
 {
     char name[regtabNameMax];
@@ -40,11 +43,20 @@ struct symlit_Node
     char name[symtabNameMax];
     int loc;
     int addressFlag;
+    int use;
     struct symlit_Node * next;
 };
 typedef struct symlit_Node symlit_node;
 symlit_node * symtabHeader[headerMax];
 symlit_node * littabHeader[headerMax];
+
+struct block_Node{
+    char name[symtabNameMax];
+    int start;
+    int length;
+};
+typedef struct block_Node block_node;
+block_node blockTab[blockTabMax];
 
 int key(char name[opcodeNameMax])
 {
@@ -71,6 +83,7 @@ symlit_node * symlitNewNode(void)
 {
     symlit_node * add = malloc(sizeof(symlit_node));
     add->addressFlag = 0;
+    add->use = use;
     add->next = NULL;
     return add;
 }
@@ -152,7 +165,7 @@ void symlitPrint(symlit_node * head, int hash, int * row)
         while(ptr != NULL)
         {
             (*row)++;
-            printf("%2d%5d%8s   %04X\n", *row, hash, ptr->name, ptr->loc);
+            printf("%2d%5d%8s   %04X %4d\n", *row, hash, ptr->name, ptr->loc, ptr->use);
             ptr = ptr->next;
         }
     }
@@ -219,17 +232,17 @@ void littabAddressing(FILE* fp, symlit_node * head)
     {
         if(!ptr->addressFlag)
         {
-            ptr->loc = locctr;
+            ptr->loc = blockTab[use].length;
             ptr->addressFlag++;
 //            printf("%04X *      =%-25s\n", ptr->loc, ptr->name);
-            fprintf(fp, "%04X *      =%-25s\n", ptr->loc, ptr->name);
+            fprintf(fp, "%04X %d *      =%-25s\n", ptr->loc, use, ptr->name);
             if(ptr->name[0] == 'X')
             {
-                locctr += (strlen(ptr->name) - 3) / 2;
+                blockTab[use].length += (strlen(ptr->name) - 3) / 2;
             }
             else if(ptr->name[0] == 'C')
             {
-                locctr += strlen(ptr->name) - 3;
+                blockTab[use].length += strlen(ptr->name) - 3;
             }
         }
         ptr= ptr->next;
@@ -256,7 +269,6 @@ char *token(char temp[20])
     else
     {
         tok = strtok(temp, " ");
-//        printf("%s %d\n", tok, strlen(tok));
         return tok;
     }
 }
@@ -268,7 +280,11 @@ int main()
     optabCreate();
     symtabCreate();
     littabCreate();
-    FILE * fp_input = fopen("srcpro.txt", "r");
+    strcpy(blockTab[0].name, "DEFAULT");
+    strcpy(blockTab[1].name, "NULL");
+    strcpy(blockTab[2].name, "NULL");
+//    FILE * fp_input = fopen("srcpro.txt", "r");
+    FILE * fp_input = fopen("srcpro2.11.txt", "r");
     FILE * fp_output = fopen("intermediate.txt", "w");
     char srcStr[srcMax+5], temp[10], temp1[10], temp2[10], temp3[10];
     char *srcTag, *srcCode, *srcOperand, *srcOperand2;
@@ -295,10 +311,10 @@ int main()
         srcOper = atoi(srcOperand);
         if(!strcmp(srcCode, "START"))
         {
-            locctr = srcOper;
-            startLoc = locctr;
+            blockTab[use].length = srcOper;
+            blockTab[use].start = blockTab[use].length;
 //            printf("%04X %s\n", locctr, srcStr);
-            fprintf(fp_output, "%04X %s\n", locctr, srcStr);
+            fprintf(fp_output, "%04X %d %s\n", blockTab[use].length, use, srcStr);
             continue;
         }
 //        else
@@ -319,7 +335,7 @@ int main()
                         {
                             if(!strcmp(srcOperand, "*"))
                             {
-                                value = locctr;
+                                value = blockTab[use].length;
                             }
                         }
                         else if(srcStr[srcOperatorIndex] == '+')
@@ -336,7 +352,7 @@ int main()
                     }
                     else
                     {
-                        symlitInsert(symtabHeader[keyTemp], srcTag, locctr);
+                        symlitInsert(symtabHeader[keyTemp], srcTag, blockTab[use].length);
                     }
 
                 }
@@ -349,43 +365,43 @@ int main()
             if(!strcmp(srcCode, "EQU"))
             {
 //                printf("%04X %33s\n", value, srcStr);
-                fprintf(fp_output, "%04X %s \n", value, srcStr);
+                fprintf(fp_output, "%04X %d %s \n", value, use, srcStr);
             }
             else
             {
 //                printf("%04X %s\n", locctr, srcStr);
-                fprintf(fp_output, "%04X %s\n", locctr, srcStr);
+                fprintf(fp_output, "%04X %d %s\n", blockTab[use].length, use, srcStr);
             }
 
 
 //            printf("%X\n", locctr);
             if(!strcmp(srcCode, "WORD"))
             {
-                locctr += 3;
+                blockTab[use].length += 3;
             }
             else if(!strcmp(srcCode, "RESW"))
             {
-                locctr += 3 * srcOper;
+                blockTab[use].length += 3 * srcOper;
             }
             else if(!strcmp(srcCode, "RESB"))
             {
-                locctr += srcOper;
+                blockTab[use].length += srcOper;
             }
             else if(!strcmp(srcCode, "BYTE"))
             {
                 if(*srcOperand == 'X')
                 {
-                    locctr += (strlen(srcOperand) - 3) / 2;
+                    blockTab[use].length += (strlen(srcOperand) - 3) / 2;
                 }
                 else if(*srcOperand == 'C')
                 {
-                    locctr += strlen(srcOperand) - 3;
+                    blockTab[use].length += strlen(srcOperand) - 3;
                 }
 
             }
             else if(srcStr[srcExtendTagIndex] == '+')
             {
-                locctr += 4;
+                blockTab[use].length += 4;
             }
 //            else if(!strcmp(srcCode, "EQU"))
 //            {
@@ -405,15 +421,15 @@ int main()
                 {
                     if(!strcmp(ptr->format, "1"))
                     {
-                        locctr += 1;
+                        blockTab[use].length += 1;
                     }
                     else if(!strcmp(ptr->format, "2"))
                     {
-                        locctr += 2;
+                        blockTab[use].length += 2;
                     }
                     else
                     {
-                        locctr += 3;
+                        blockTab[use].length += 3;
                     }
                 }
 
@@ -432,25 +448,25 @@ int main()
         }
         else   //end
         {
-            fprintf(fp_output, "%04X %s\n", locctr, srcStr);
+            fprintf(fp_output, "%04X %d %s\n", blockTab[use].length, use, srcStr);
             for(i = 0; i < headerMax; i++)
             {
                 littabAddressing(fp_output, littabHeader[i]);
             }
         }
     }//while
-    printf("%15s\nRow Hash SymName Address\n", "SYMTAB");
+    printf("%15s\nRow Hash SymName Address Use\n", "SYMTAB");
     for(i = 0; i < headerMax; i++)
     {
         symlitPrint(symtabHeader[i], i, &row);
     }
-    printf("\n\n%15s\nRow Hash SymName Address\n", "LITTAB");
+    printf("\n\n%15s\nRow Hash SymName Address Use\n", "LITTAB");
     row = 0;
     for(i = 0; i < headerMax; i++)
     {
         symlitPrint(littabHeader[i], i, &row);
     }
-    printf("\n\n%40s\nRow addr%6s%47s\n", "Original Program <literal pool>", "Code", "Target Address");
+    printf("\n\n%40s\nRow addr/use%6s%47s\n", "Original Program <literal pool>", "Code", "Target Address");
     row = 0;
     fclose(fp_input);
     fclose(fp_output);
@@ -465,6 +481,7 @@ int main()
 //    char ta[8];
     while(1)
     {
+
         ta = 0;
         if(flag)
         {
@@ -473,7 +490,7 @@ int main()
         }
         flag++;
         row++;
-        fscanf(fp_input, "%X", &address);
+        fscanf(fp_input, "%X %d", &address, &use);
         if(feof(fp_input) != 0) break;  //warning
         fgets(srcStr, srcMax, fp_input);
 //        printf("%d %04X %s\n", row, address, srcStr);
@@ -487,8 +504,8 @@ int main()
         srcOperand2 = token(temp3);
         if(!strcmp(srcCode, "START"))
         {
-            fprintf(fp_output, "H%-6s%06X%06X\n", srcTag, startLoc, locctr);
-            printf("%2d  %04X %s\n", row, address, srcStr);
+            fprintf(fp_output, "H%-6s%06X%06X\n", srcTag, startLoc, blockTab[use].length);     //改
+            printf("%2d  %04X %d %s\n", row, address, use, srcStr);
             continue;
         }
 
@@ -519,7 +536,7 @@ int main()
                         ta += 1 * (int)pow(16,5);
                         ta += symlitFind(symtabHeader[key(srcOperand)], srcOperand)->loc;
 //                        printf("%s ta:%08X\n", srcCode, ta);
-                        printf("%2d  %04X %s          %08X\n", row, address, srcStr, ta);
+                        printf("%2d  %04X %d %s          %08X\n", row, address, use, srcStr, ta);
                         continue;
                     }
                     else    //3
@@ -609,7 +626,7 @@ int main()
                             }
                         }
 //                        printf("%s ta:%06X\n", srcCode, ta);
-                        printf("%2d  %04X %s          %06X\n", row, address, srcStr, ta);
+                        printf("%2d  %04X %d %s          %06X\n", row, address, use, srcStr, ta);
                         continue;
                     }
 
@@ -634,7 +651,7 @@ int main()
                             }
                         }
                     }
-                    printf("%2d  %04X %s          %04X\n", row, address, srcStr, ta);
+                    printf("%2d  %04X %d %s          %04X\n", row, address, use, srcStr, ta);
                     continue;
                 }
 
@@ -648,7 +665,7 @@ int main()
             {
                 if(*srcCode == 'C')
                 {
-                    printf("%2d  %04X %s          ", row, address, srcStr);
+                    printf("%2d  %04X %d %s          ", row, address, use, srcStr);
                     for(i = 2; i < strlen(srcCode); i++)
                     {
                         if(*(srcCode + i) == '\'') break;
@@ -659,7 +676,7 @@ int main()
                 }
                 else if(*srcCode == 'X')
                 {
-                    printf("%2d  %04X %s          ", row, address, srcStr);
+                    printf("%2d  %04X %d %s          ", row, address, use, srcStr);
                     for(i = 2; i < strlen(srcCode); i++)
                     {
                         if(*(srcCode + i) == '\'') break;
@@ -671,7 +688,7 @@ int main()
             }
             else if(!strcmp(srcCode, "BYTE"))
             {
-                printf("%2d  %04X %s          ", row, address, srcStr);
+                printf("%2d  %04X %d %s          ", row, address, use, srcStr);
                 for(i = 2; i < strlen(srcOperand); i++)
                 {
                     if(*(srcOperand + i) == '\'') break;
@@ -681,7 +698,7 @@ int main()
                 continue;
             }
         }
-        printf("%2d  %04X %s\n", row, address, srcStr);
+        printf("%2d  %04X %d %s\n", row, address, use, srcStr);
     }
 
 
