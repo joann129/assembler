@@ -50,7 +50,8 @@ typedef struct symlit_Node symlit_node;
 symlit_node * symtabHeader[headerMax];
 symlit_node * littabHeader[headerMax];
 
-struct block_Node{
+struct block_Node
+{
     char name[symtabNameMax];
     int start;
     int length;
@@ -283,8 +284,8 @@ int main()
     strcpy(blockTab[0].name, "DEFAULT");
     strcpy(blockTab[1].name, "NULL");
     strcpy(blockTab[2].name, "NULL");
-//    FILE * fp_input = fopen("srcpro.txt", "r");
-    FILE * fp_input = fopen("srcpro2.11.txt", "r");
+    FILE * fp_input = fopen("srcpro.txt", "r");
+//    FILE * fp_input = fopen("srcpro2.11.txt", "r");
     FILE * fp_output = fopen("intermediate.txt", "w");
     char srcStr[srcMax+5], temp[10], temp1[10], temp2[10], temp3[10];
     char *srcTag, *srcCode, *srcOperand, *srcOperand2;
@@ -321,7 +322,35 @@ int main()
 //        {
 //            locctr = 0;
 //        }
-        if(strcmp(srcCode, "END") != 0)
+        if(!strcmp(srcCode, "USE"))
+        {
+            if(srcOperand == NULL)
+            {
+                use = 0;
+            }
+            else
+            {
+                for(i = 0; i < blockTabMax; i++)
+                {
+                    if(!strcmp(blockTab[i].name, "NULL"))
+                    {
+                        strcpy(blockTab[i].name, srcOperand);
+                        blockTab[i].start = blockTab[use].length;
+                        blockTab[i].length = 0;
+                        use = i;
+                        break;
+                    }
+                    else if(!strcmp(blockTab[i].name, srcOperand))
+                    {
+                        use = i;
+                        break;
+                    }
+                }
+            }
+            fprintf(fp_output, "%04X %d %s\n", blockTab[use].length, use, srcStr);
+
+        }
+        else if(strcmp(srcCode, "END") != 0)
         {
             if(srcTag != NULL)
             {
