@@ -18,9 +18,7 @@
 #define regtabHeaderMax 9
 #define blockTabMax 3
 
-//int blockTab[0]->length = 0,
 int use = 0;
-int startLoc;
 struct regtab
 {
     char name[regtabNameMax];
@@ -64,11 +62,9 @@ int key(char name[opcodeNameMax])
     int i, sum = 0;
     for(i = 0; i < strlen(name); i++)
     {
-//        printf("%d ", name[i]);
         sum += name[i];
     }
     sum %= 10;
-//    printf("\n");
     return sum;
 
 }
@@ -235,15 +231,16 @@ void littabAddressing(FILE* fp, symlit_node * head)
         {
             ptr->loc = blockTab[use].length;
             ptr->addressFlag++;
-//            printf("%04X *      =%-25s\n", ptr->loc, ptr->name);
             fprintf(fp, "%04X %d *      =%-25s\n", ptr->loc, use, ptr->name);
             if(ptr->name[0] == 'X')
             {
                 blockTab[use].length += (strlen(ptr->name) - 3) / 2;
+                ptr->use = use;
             }
             else if(ptr->name[0] == 'C')
             {
                 blockTab[use].length += strlen(ptr->name) - 3;
+                ptr->use = use;
             }
         }
         ptr= ptr->next;
@@ -284,8 +281,8 @@ int main()
     strcpy(blockTab[0].name, "DEFAULT");
     strcpy(blockTab[1].name, "NULL");
     strcpy(blockTab[2].name, "NULL");
-    FILE * fp_input = fopen("srcpro.txt", "r");
-//    FILE * fp_input = fopen("srcpro2.11.txt", "r");
+//    FILE * fp_input = fopen("srcpro.txt", "r");
+    FILE * fp_input = fopen("srcpro2.11.txt", "r");
     FILE * fp_output = fopen("intermediate.txt", "w");
     char srcStr[srcMax+5], temp[10], temp1[10], temp2[10], temp3[10];
     char *srcTag, *srcCode, *srcOperand, *srcOperand2;
@@ -335,7 +332,6 @@ int main()
                     if(!strcmp(blockTab[i].name, "NULL"))
                     {
                         strcpy(blockTab[i].name, srcOperand);
-                        blockTab[i].start = blockTab[use].length;
                         blockTab[i].length = 0;
                         use = i;
                         break;
@@ -355,7 +351,6 @@ int main()
             if(srcTag != NULL)
             {
                 keyTemp = key(srcTag);
-//                printf("key is %d\n", keyTemp);
                 if(symlitFind(symtabHeader[keyTemp], srcTag) == NULL)
                 {
                     if(!strcmp(srcCode, "EQU"))
@@ -393,17 +388,12 @@ int main()
 
             if(!strcmp(srcCode, "EQU"))
             {
-//                printf("%04X %33s\n", value, srcStr);
                 fprintf(fp_output, "%04X %d %s \n", value, use, srcStr);
             }
             else
             {
-//                printf("%04X %s\n", locctr, srcStr);
                 fprintf(fp_output, "%04X %d %s\n", blockTab[use].length, use, srcStr);
             }
-
-
-//            printf("%X\n", locctr);
             if(!strcmp(srcCode, "WORD"))
             {
                 blockTab[use].length += 3;
@@ -484,6 +474,10 @@ int main()
             }
         }
     }//while
+    for(i = 0; i < blockTabMax-1; i++)
+    {
+        blockTab[i+1].start = blockTab[i].start + blockTab[i].length;
+    }
     printf("%15s\nRow Hash SymName Address Use\n", "SYMTAB");
     for(i = 0; i < headerMax; i++)
     {
@@ -495,11 +489,10 @@ int main()
     {
         symlitPrint(littabHeader[i], i, &row);
     }
-    printf("\n\n%40s\nRow addr/use%6s%47s\n", "Original Program <literal pool>", "Code", "Target Address");
+    printf("\n\n%40s\nRow addr/use%8s%47s\n", "Original Program <literal pool>", "Code", "Target Address");
     row = 0;
     fclose(fp_input);
     fclose(fp_output);
-//    printf("%d\n", flag);
 
 //--------------------------------------------------
     fp_input = fopen("intermediate.txt", "r");
@@ -507,7 +500,6 @@ int main()
     int address, ta = 0;
     symlit_node * base = NULL;
     int plus;
-//    char ta[8];
     while(1)
     {
 
@@ -533,7 +525,7 @@ int main()
         srcOperand2 = token(temp3);
         if(!strcmp(srcCode, "START"))
         {
-            fprintf(fp_output, "H%-6s%06X%06X\n", srcTag, startLoc, blockTab[use].length);     //改
+            fprintf(fp_output, "H%-6s%06X%06X\n", srcTag, blockTab[0].start, blockTab[blockTabMax-1].start + blockTab[blockTabMax-1].length);     //改
             printf("%2d  %04X %d %s\n", row, address, use, srcStr);
             continue;
         }
@@ -547,7 +539,6 @@ int main()
                 //code
                 if(!strcmp(ptr->format, "3/4"))
                 {
-//                    printf("code:%X\n", ptr->opcode);
                     if(srcStr[srcExtendTagIndex+1] == '+')  //4
                     {
                         if(srcStr[srcOperTagIndex + 1] == '#')
@@ -564,7 +555,6 @@ int main()
                         }
                         ta += 1 * (int)pow(16,5);
                         ta += symlitFind(symtabHeader[key(srcOperand)], srcOperand)->loc;
-//                        printf("%s ta:%08X\n", srcCode, ta);
                         printf("%2d  %04X %d %s          %08X\n", row, address, use, srcStr, ta);
                         continue;
                     }
@@ -589,7 +579,6 @@ int main()
                                 ta += 8 * (int)pow(16,3);
                             }
                         }
-//                        printf("code is %X\n", ptr->opcode);
                         if(srcStr[srcOperTagIndex + 1] == '#' && *srcOperand <= '9' && *srcOperand >= '0' )
                         {
                             ta += atoi(srcOperand);
@@ -599,13 +588,16 @@ int main()
                             if(base == NULL)
                             {
                                 ta += 2 * (int)pow(16,3);
-                                ta += ((symlitFind(littabHeader[key(srcOperand)], srcOperand)->loc - address - 3) % (int)pow(16,3) );
+                                ta += ((symlitFind(littabHeader[key(srcOperand)], srcOperand)->loc + blockTab[symlitFind(littabHeader[key(srcOperand)], srcOperand)->use].start - address - 3) % (int)pow(16,3) );
+                                if(symlitFind(littabHeader[key(srcOperand)], srcOperand)->loc + blockTab[symlitFind(littabHeader[key(srcOperand)], srcOperand)->use].start - address - 3 < 0)
+                                {
+                                    ta += 1 * (int)pow(16,3);
+                                }
                             }
                             else
                             {
                                 if(abs(symlitFind(littabHeader[key(srcOperand)], srcOperand)->loc - base->loc) < abs(symlitFind(littabHeader[key(srcOperand)], srcOperand)->loc - address - 3) && base->loc < address )
                                 {
-//                                    printf("= is %X\n", symlitFind(littabHeader[key(srcOperand)], srcOperand)->loc);
                                     ta += (symlitFind(littabHeader[key(srcOperand)], srcOperand)->loc - base->loc) % (int)pow(16,3);
                                     ta += 4 * (int)pow(16,3);
                                     if(symlitFind(littabHeader[key(srcOperand)], srcOperand)->loc - base->loc < 0)
@@ -615,7 +607,6 @@ int main()
                                 }
                                 else
                                 {
-//                                    printf("= is %X\n", symlitFind(littabHeader[key(srcOperand)], srcOperand)->loc);
                                     ta += (symlitFind(littabHeader[key(srcOperand)], srcOperand)->loc - address - 3) % (int)pow(16,3);
                                     ta += 2 * (int)pow(16,3);
                                     if(symlitFind(littabHeader[key(srcOperand)], srcOperand)->loc - address - 3 < 0)
@@ -629,8 +620,12 @@ int main()
                         {
                             if(base == NULL)
                             {
-                                ta += (symlitFind(symtabHeader[key(srcOperand)], srcOperand)->loc - address - 3) % (int)pow(16,3) ;
+                                ta += (symlitFind(symtabHeader[key(srcOperand)], srcOperand)->loc + blockTab[symlitFind(symtabHeader[key(srcOperand)], srcOperand)->use].start - address - 3) % (int)pow(16,3) ;
                                 ta += 2 * (int)pow(16,3);
+                                if(symlitFind(symtabHeader[key(srcOperand)], srcOperand)->loc+ blockTab[symlitFind(symtabHeader[key(srcOperand)], srcOperand)->use].start - address - 3 < 0)
+                                {
+                                    ta += 1 * (int)pow(16,3);
+                                }
                             }
                             else
                             {
@@ -688,7 +683,6 @@ int main()
             else if(!strcmp(srcCode, "BASE"))
             {
                 base = symlitFind(symtabHeader[key(srcOperand)], srcOperand);
-//                printf("%X\n", base->loc);
             }
             else if(srcStr[srcExtendTagIndex + 1] == '=')
             {
@@ -736,3 +730,4 @@ int main()
     fclose(fp_output);
     return 0;
 }
+//end
