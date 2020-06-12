@@ -57,6 +57,22 @@ struct block_Node
 typedef struct block_Node block_node;
 block_node blockTab[blockTabMax];
 
+struct t_Node{
+    int start;
+    int length;
+    int use;
+    struct t_Node * next;
+};
+typedef struct t_Node t_node;
+
+struct m_Node{
+    int loc;
+    struct m_Node *next;
+};
+typedef struct m_Node m_node;
+t_node *thead = NULL, *tptr;
+m_node *mhead = NULL, *mptr;
+
 int key(char name[opcodeNameMax])
 {
     int i, sum = 0;
@@ -83,6 +99,35 @@ symlit_node * symlitNewNode(void)
     add->use = use;
     add->next = NULL;
     return add;
+}
+
+t_node * tNewNode(int start, int use) {
+    t_node * add = malloc(sizeof(t_node));
+    add->start = start;
+    add->length = 0;
+    add->use = use;
+    add->next = NULL;
+    return add;
+}
+
+m_node * mNewNode(int address) {
+    m_node * add = malloc(sizeof(m_node));
+    add->loc = address + 1;
+    add->next = NULL;
+    return add;
+}
+
+void tbuild(int loc, int length, int flag, int use) {
+    if(thead == NULL) {
+        thead = tNewNode(length - loc, use);
+        tptr = thead;
+    }else if(30 < tptr->length + loc || flag){
+        tptr->next = tNewNode(length - loc, use);
+        tptr = tptr->next;
+        tptr->length += loc;
+    }else{
+        tptr->length += loc;
+    }
 }
 
 void optabPrint(optab_node * head, int hash, int * row)
@@ -236,11 +281,13 @@ void littabAddressing(FILE* fp, symlit_node * head)
             {
                 blockTab[use].length += (strlen(ptr->name) - 3) / 2;
                 ptr->use = use;
+                tbuild((strlen(ptr->name) - 3) / 2, blockTab[use].length, 0, use);
             }
             else if(ptr->name[0] == 'C')
             {
                 blockTab[use].length += strlen(ptr->name) - 3;
                 ptr->use = use;
+                tbuild(strlen(ptr->name) - 3, blockTab[use].length, 0, use);
             }
         }
         ptr= ptr->next;
@@ -255,6 +302,22 @@ void regtabPrint(void)
         printf("%2d%7s%8d\n", row, reg[row-1].name, reg[row-1].code);
     }
     printf("\n");
+}
+
+void tModify(void) {
+    tptr = thead;
+    while(tptr != NULL) {
+        tptr->start += blockTab[tptr->use].start;
+        tptr = tptr->next;
+    }
+}
+
+void tPrint(void) {
+    tptr = thead;
+    while(tptr != NULL) {
+        printf("T%06X%02X\n", tptr->start, tptr->length);
+        tptr = tptr->next;
+    }
 }
 
 char *token(char temp[20])
@@ -313,6 +376,8 @@ int main()
             blockTab[use].start = blockTab[use].length;
 //            printf("%04X %s\n", locctr, srcStr);
             fprintf(fp_output, "%04X %d %s\n", blockTab[use].length, use, srcStr);
+            thead = tNewNode(blockTab[use].length, use);
+            tptr = thead;
             continue;
         }
 //        else
@@ -344,6 +409,7 @@ int main()
                 }
             }
             fprintf(fp_output, "%04X %d %s\n", blockTab[use].length, use, srcStr);
+            tbuild(0, blockTab[use].length, 1, use);
 
         }
         else if(strcmp(srcCode, "END") != 0)
@@ -411,16 +477,19 @@ int main()
                 if(*srcOperand == 'X')
                 {
                     blockTab[use].length += (strlen(srcOperand) - 3) / 2;
+                    tbuild((strlen(srcOperand) - 3) / 2, blockTab[use].length, 0, use);
                 }
                 else if(*srcOperand == 'C')
                 {
                     blockTab[use].length += strlen(srcOperand) - 3;
+                    tbuild(strlen(srcOperand) - 3, blockTab[use].length, 0, use);
                 }
 
             }
             else if(srcStr[srcExtendTagIndex] == '+')
             {
                 blockTab[use].length += 4;
+                tbuild(4, blockTab[use].length, 0, use);
             }
 //            else if(!strcmp(srcCode, "EQU"))
 //            {
@@ -441,19 +510,21 @@ int main()
                     if(!strcmp(ptr->format, "1"))
                     {
                         blockTab[use].length += 1;
+                        tbuild(1, blockTab[use].length, 0, use);
                     }
                     else if(!strcmp(ptr->format, "2"))
                     {
                         blockTab[use].length += 2;
+                        tbuild(2, blockTab[use].length, 0, use);
                     }
                     else
                     {
                         blockTab[use].length += 3;
+                        tbuild(3, blockTab[use].length, 0, use);
                     }
                 }
 
             }
-
             if(srcStr[srcOperTagIndex] == '=')
             {
                 keyTemp = key(srcOperand);
@@ -478,6 +549,8 @@ int main()
     {
         blockTab[i+1].start = blockTab[i].start + blockTab[i].length;
     }
+    tModify();
+//    tPrint();
     printf("%15s\nRow Hash SymName Address Use\n", "SYMTAB");
     for(i = 0; i < headerMax; i++)
     {
