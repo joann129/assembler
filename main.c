@@ -19,12 +19,13 @@
 #define blockTabMax 3
 
 int use = 0;
-struct regtab{
+struct regtab{	//º»¶sæπ™Ì 
     char name[regtabNameMax];
     int code;
 };
 struct regtab reg[9] = { {"A",0}, {"X",1}, {"L",2}, {"PC",8}, {"SW",9}, {"B",3}, {"S",4}, {"T",5}, {"F",6}, };
-struct optab_Node{
+
+struct optab_Node{	//æﬁß@ΩX™Ì  (æﬁß@ΩX™Ì™∫∏ÍÆ∆ºg¶bD0746323_¶ø©…ß°_optab.txt∏Ã) 
     char name[opcodeNameMax];
     char format[opcodeFormatyMax];
     char info[opcodeInfoMax];
@@ -34,7 +35,7 @@ struct optab_Node{
 typedef struct optab_Node optab_node;
 optab_node * optabHeader[headerMax];
 
-struct symlit_Node{
+struct symlit_Node{	//≤≈∏π™Ì•H§Œ±`º∆™Ì 
     char name[symtabNameMax];
     int loc;
     int addressFlag;
@@ -45,7 +46,7 @@ typedef struct symlit_Node symlit_node;
 symlit_node * symtabHeader[headerMax];
 symlit_node * littabHeader[headerMax];
 
-struct block_Node{
+struct block_Node{	//∞œ∂Ù 
     char name[symtabNameMax];
     int start;
     int length;
@@ -53,7 +54,7 @@ struct block_Node{
 typedef struct block_Node block_node;
 block_node blockTab[blockTabMax];
 
-struct t_Node{
+struct t_Node{	//•ÿ™∫ΩX™∫§∫§Â∞Oø˝ 
     int start;
     int length;
     int use;
@@ -61,7 +62,7 @@ struct t_Node{
 };
 typedef struct t_Node t_node;
 
-struct m_Node{
+struct m_Node{	//•ÿ™∫ΩX™∫≠◊•ø∞Oø˝ 
     int loc;
     struct m_Node *next;
 };
@@ -69,7 +70,7 @@ typedef struct m_Node m_node;
 t_node *thead = NULL, *tptr;
 m_node *mhead = NULL, *mptr;
 
-void regtabPrint(void) {
+void regtabPrint(void) {	//¶L•Xº»¶sæπ™Ì 
     printf("%14s\nRow REG_Name REG_Code\n", "REGTAB");
     int row;
     for(row = 1; row <= 9; row++) {
@@ -78,13 +79,22 @@ void regtabPrint(void) {
     printf("\n");
 }
 
-optab_node * optabNewNode(void) {
+optab_node * optabNewNode(void) {	//∑sºW§@µßæﬁß@ΩX 
     optab_node * add = malloc(sizeof(optab_node));
     add->next = NULL;
     return add;
 }
 
-void optabPrint(optab_node * head, int hash, int * row) {
+int key(char name[opcodeNameMax]) {	//∫‚ªÆß«™k™∫key (•˛≥°asciiΩX¨€•[°A¶A%10) 
+    int i, sum = 0;
+    for(i = 0; i < strlen(name); i++) {
+        sum += name[i];
+    }
+    sum %= 10;
+    return sum;
+}
+
+void optabPrint(optab_node * head, int hash, int * row) {	//¶L•Xæﬁß@ΩX™Ì 
     optab_node * ptr;
     if(head->next == NULL) {
         printf("empty\n");
@@ -99,7 +109,7 @@ void optabPrint(optab_node * head, int hash, int * row) {
     }
 }
 
-void optabCreate(void) {
+void optabCreate(void) {	//ß‚D0746323_¶ø©…ß°_optab.txt∏Ã™∫æﬁß@ΩX•HªÆß«™kß@±∆¶C®√¶L•X 
     optab_node* ptr;
     int i, row = 0;
     for(i = 0; i < headerMax; i ++) {
@@ -131,7 +141,7 @@ void optabCreate(void) {
     printf("\n");
 }
 
-symlit_node * symlitNewNode(void) {
+symlit_node * symlitNewNode(void) {	//∑sºW§@µß≤≈∏π©Œ±`º∆∏ÍÆ∆ 
     symlit_node * add = malloc(sizeof(symlit_node));
     add->addressFlag = 0;
     add->use = use;
@@ -139,7 +149,7 @@ symlit_node * symlitNewNode(void) {
     return add;
 }
 
-void symtabCreate(void) {
+void symtabCreate(void) {	//≤≈∏π™Ì™Ï©l§∆ 
     int i;
     for(i = 0; i < headerMax; i++)
     {
@@ -147,7 +157,7 @@ void symtabCreate(void) {
     }
 }
 
-void littabCreate(void) {
+void littabCreate(void) {	//±`º∆™Ì™Ï©l§∆ 
     int i;
     for(i = 0; i < headerMax; i++)
     {
@@ -155,7 +165,7 @@ void littabCreate(void) {
     }
 }
 
-char *token(char temp[20]) {
+char *token(char temp[20]) {	//±N≠Ï©lµ{¶°™∫¶r¶Í•H™≈•’ß@§¿≥Œ 
     char * tok;
     if(temp[0] == ' ') {
         return NULL;
@@ -166,7 +176,7 @@ char *token(char temp[20]) {
     }
 }
 
-t_node * tNewNode(int start, int use) {
+t_node * tNewNode(int start, int use) {	//∑sºW§@µß§∫§Â∞Oø˝ 
     t_node * add = malloc(sizeof(t_node));
     add->start = start;
     add->length = 0;
@@ -175,7 +185,7 @@ t_node * tNewNode(int start, int use) {
     return add;
 }
 
-void tbuild(int loc, int length, int flag, int use) {
+void tbuild(int loc, int length, int flag, int use) {	//´ÿ§∫§Â∞Oø˝™∫¶Í¶C 
     if(thead == NULL) {
         thead = tNewNode(length - loc, use);
         tptr = thead;
@@ -190,17 +200,7 @@ void tbuild(int loc, int length, int flag, int use) {
     }
 }
 
-int key(char name[opcodeNameMax]) {
-    int i, sum = 0;
-    for(i = 0; i < strlen(name); i++) {
-        sum += name[i];
-    }
-    sum %= 10;
-    return sum;
-
-}
-
-symlit_node * symlitFind(symlit_node * head, char tag[symtabNameMax]) {
+symlit_node * symlitFind(symlit_node * head, char tag[symtabNameMax]) {	//¶b≤≈∏π™Ì©Œ±`º∆™Ìß‰¥M∏ÍÆ∆°Aß‰§£®Ï´h¶^∂«NULL 
     symlit_node * ptr = head;
     while(ptr != NULL) {
         if(!strcmp(ptr->name, tag)) {
@@ -211,7 +211,7 @@ symlit_node * symlitFind(symlit_node * head, char tag[symtabNameMax]) {
     return NULL;
 }
 
-void symlitInsert(symlit_node * head, char name[symtabNameMax], int loc) {
+void symlitInsert(symlit_node * head, char name[symtabNameMax], int loc) {	//±N∏ÍÆ∆¥°§J≤≈∏π™Ì 
     symlit_node * ptr;
     ptr = head;
     while(ptr->next != NULL) {
@@ -223,14 +223,14 @@ void symlitInsert(symlit_node * head, char name[symtabNameMax], int loc) {
     ptr->loc = loc;
 }
 
-m_node * mNewNode(int loc) {
+m_node * mNewNode(int loc) {	//∑sºW§@µß≠◊•ø∞Oø˝ 
     m_node * add = malloc(sizeof(m_node));
     add->loc = loc;
     add->next = NULL;
     return add;
 }
 
-void mbuild(int loc) {
+void mbuild(int loc) {	//´ÿ≠◊•ø∞Oø˝™∫¶Í¶C 
     if(mhead == NULL) {
         mhead = mNewNode(loc+1);
         mptr = mhead;
@@ -241,7 +241,7 @@ void mbuild(int loc) {
     }
 }
 
-void littabAddressing(FILE* fp, symlit_node * head) {
+void littabAddressing(FILE* fp, symlit_node * head) {	//¨∞±`º∆™Ì™∫∏ÍÆ∆©wß} 
     symlit_node * ptr;
     if(head->next == NULL) {
         return;
@@ -269,7 +269,7 @@ void littabAddressing(FILE* fp, symlit_node * head) {
     }
 }
 
-optab_node * optabFind(optab_node * head, char srcCode[srcCodeMax+1]) {
+optab_node * optabFind(optab_node * head, char srcCode[srcCodeMax+1]) {	//¶bæﬁß@ΩX™Ìß‰¥M∏ÍÆ∆°Aß‰§£®Ï´h¶^∂«NULL 
     optab_node * ptr = head;
     while(ptr != NULL) {
         if(!strcmp(ptr->name, srcCode)) {
@@ -280,7 +280,7 @@ optab_node * optabFind(optab_node * head, char srcCode[srcCodeMax+1]) {
     return NULL;
 }
 
-void tModify(void) {
+void tModify(void) {	//≠◊•ø§∫§Â∞Oø˝  (±N∞œ∂Ù™∫™¯´◊•[§W•h) 
     tptr = thead;
     while(tptr != NULL) {
         tptr->start += blockTab[tptr->use].start;
@@ -288,7 +288,7 @@ void tModify(void) {
     }
 }
 
-void mPrint(FILE* fp) {
+void mPrint(FILE* fp) {	//¶L•X≠◊•ø∞Oø˝ 
     mptr = mhead;
     while(mptr != NULL) {
         fprintf(fp, "\nM%06X05", mptr->loc);
@@ -297,7 +297,7 @@ void mPrint(FILE* fp) {
     }
 }
 
-void symlitPrint(symlit_node * head, int hash, int * row) {
+void symlitPrint(symlit_node * head, int hash, int * row) {	//¶L•X≤≈∏π™Ì©Œ±`º∆™Ì 
     symlit_node * ptr;
     if(head->next != NULL) {
         ptr = head->next;
@@ -309,7 +309,7 @@ void symlitPrint(symlit_node * head, int hash, int * row) {
     }
 }
 
-void tPrint(FILE* fp, int address,int use, int length) {
+void tPrint(FILE* fp, int address,int use, int length) {	//¶L•X§∫§Â∞Oø˝ 
     if(tptr->length == 0 || blockTab[use].start + address + length > tptr->start + tptr->length || tptr->use != use ) {
         tptr = tptr->next;
         while(tptr->length == 0) {
@@ -321,7 +321,7 @@ void tPrint(FILE* fp, int address,int use, int length) {
 }
 
 int main() {
-//    system("chcp 65001");
+// ≤ƒ§@Ω¸∞j 
     regtabPrint();
     optabCreate();
     symtabCreate();
@@ -329,8 +329,8 @@ int main() {
     strcpy(blockTab[0].name, "DEFAULT");
     strcpy(blockTab[1].name, "NULL");
     strcpy(blockTab[2].name, "NULL");
-    FILE * fp_input = fopen("srcpro.txt", "r");
-//    FILE * fp_input = fopen("srcpro2.11.txt", "r");
+    FILE * fp_input = fopen("srcpro.txt", "r");			//2.9™∫øÈ§J¿… 
+//    FILE * fp_input = fopen("srcpro2.11.txt", "r");	//2.11™∫øÈ§J¿… 
     FILE * fp_output = fopen("intermediate.txt", "w");
     char srcStr[srcMax+5], temp[10], temp1[10], temp2[10], temp3[10];
     char *srcTag, *srcCode, *srcOperand, *srcOperand2;
@@ -352,7 +352,7 @@ int main() {
         srcOperand2 = token(temp3);
 
         srcOper = atoi(srcOperand);
-        if(!strcmp(srcCode, "START")) {
+        if(!strcmp(srcCode, "START")) {	//START 
             blockTab[use].length = srcOper;
             blockTab[use].start = blockTab[use].length;
             fprintf(fp_output, "%04X %d %s\n", blockTab[use].length, use, srcStr);
@@ -360,7 +360,7 @@ int main() {
             tptr = thead;
             continue;
         }
-        if(!strcmp(srcCode, "USE")) {
+        if(!strcmp(srcCode, "USE")) {	//∞œ∂Ù 
             if(srcOperand == NULL) {
                 use = 0;
             }
@@ -382,11 +382,11 @@ int main() {
             tbuild(0, blockTab[use].length, 1, use);
 
         }
-        else if(strcmp(srcCode, "END") != 0) {
+        else if(strcmp(srcCode, "END") != 0) {	//not END 
             if(srcTag != NULL) {
                 keyTemp = key(srcTag);
-                if(symlitFind(symtabHeader[keyTemp], srcTag) == NULL) {
-                    if(!strcmp(srcCode, "EQU")) {
+                if(symlitFind(symtabHeader[keyTemp], srcTag) == NULL) {	//¶b≤≈∏π™Ìß‰§£®Ï∏ÍÆ∆°A©Û¨O∑sºW®√¥°§J 
+                    if(!strcmp(srcCode, "EQU")) {	//EQU 
                         if(srcStr[srcOperatorIndex] == ' ') {
                             if(!strcmp(srcOperand, "*")) {
                                 value = blockTab[use].length;
@@ -402,30 +402,31 @@ int main() {
                         }
                         symlitInsert(symtabHeader[keyTemp], srcTag, value);
                     }
-                    else{
+                    else{	//not EQU 
                         symlitInsert(symtabHeader[keyTemp], srcTag, blockTab[use].length);
                     }
                 }
                 else{
-                    printf("Ëº∏ÂÖ•Ê™îÊúâÈáçË§áÁ¨¶Ëôü\n");
+                    printf("øÈ§J¿…¶≥≠´Ω∆≤≈∏π\n");
                 }
             }
-            if(!strcmp(srcCode, "EQU")) {
+            if(!strcmp(srcCode, "EQU")) {	//•˝øÈ•X¶A•[≠pº∆æπ 
                 fprintf(fp_output, "%04X %d %s \n", value, use, srcStr);
             }
             else{
                 fprintf(fp_output, "%04X %d %s\n", blockTab[use].length, use, srcStr);
             }
-            if(!strcmp(srcCode, "WORD")) {
+            //≠pº∆æπ≤÷•[ 
+            if(!strcmp(srcCode, "WORD")) {	//WORD 
                 blockTab[use].length += 3;
             }
-            else if(!strcmp(srcCode, "RESW")) {
+            else if(!strcmp(srcCode, "RESW")) {	//RESW 
                 blockTab[use].length += 3 * srcOper;
             }
-            else if(!strcmp(srcCode, "RESB")) {
+            else if(!strcmp(srcCode, "RESB")) {	//RESB 
                 blockTab[use].length += srcOper;
             }
-            else if(!strcmp(srcCode, "BYTE")) {
+            else if(!strcmp(srcCode, "BYTE")) {	//BYTE 
                 if(*srcOperand == 'X') {
                     blockTab[use].length += (strlen(srcOperand) - 3) / 2;
                     tbuild((strlen(srcOperand) - 3) / 2, blockTab[use].length, 0, use);
@@ -435,14 +436,14 @@ int main() {
                     tbuild(strlen(srcOperand) - 3, blockTab[use].length, 0, use);
                 }
             }
-            else if(srcStr[srcExtendTagIndex] == '+') {
+            else if(srcStr[srcExtendTagIndex] == '+') {	//ÆÊ¶°•| ™¯´◊¨∞4 
                 if(srcStr[srcOperTagIndex] != '#') {
                     mbuild(blockTab[use].length);
                 }
                 blockTab[use].length += 4;
                 tbuild(4, blockTab[use].length, 0, use);
             }
-            else if(!strcmp(srcCode, "LTORG")) {
+            else if(!strcmp(srcCode, "LTORG")) {	//LTORG ß@±`º∆™Ì©wß} 
                 for(i = 0; i < headerMax; i++)
                 {
                     littabAddressing(fp_output, littabHeader[i]);
@@ -451,54 +452,53 @@ int main() {
             else{
                 ptr = optabFind(optabHeader[key(srcCode)], srcCode);
                 if(ptr != NULL) {
-                    if(!strcmp(ptr->format, "1")) {
+                    if(!strcmp(ptr->format, "1")) {	//ÆÊ¶°§@ 
                         blockTab[use].length += 1;
                         tbuild(1, blockTab[use].length, 0, use);
                     }
-                    else if(!strcmp(ptr->format, "2")) {
+                    else if(!strcmp(ptr->format, "2")) {	//ÆÊ¶°§G 
                         blockTab[use].length += 2;
                         tbuild(2, blockTab[use].length, 0, use);
                     }
-                    else{
+                    else{	//ÆÊ¶°§T 
                         blockTab[use].length += 3;
                         tbuild(3, blockTab[use].length, 0, use);
                     }
                 }
             }
-            if(srcStr[srcOperTagIndex] == '=') {
+            if(srcStr[srcOperTagIndex] == '=') {	//±`º∆ 
                 keyTemp = key(srcOperand);
                 if(symlitFind(littabHeader[keyTemp], srcOperand) == NULL) {
                     symlitInsert(littabHeader[key(srcOperand)], srcOperand, 0);
                 }
             }
         }
-        else{   //end
+        else{   //END
             fprintf(fp_output, "%04X %d %s\n", blockTab[use].length, use, srcStr);
-            for(i = 0; i < headerMax; i++) {
+            for(i = 0; i < headerMax; i++) {	//END ±`º∆™Ì©wß} 
                 littabAddressing(fp_output, littabHeader[i]);
             }
         }
     }//while
-    for(i = 0; i < blockTabMax-1; i++) {
+    for(i = 0; i < blockTabMax-1; i++) {	//¶L•Xº»¶sæπ™Ì 
         blockTab[i+1].start = blockTab[i].start + blockTab[i].length;
     }
     tModify();
-    tptr = thead;
-    printf("%15s\nRow Hash SymName Address Use\n", "SYMTAB");
+    tptr = thead;	//´¸¶^¶Í¶C≤ƒ§@≠” 
+    printf("%15s\nRow Hash SymName Address Use\n", "SYMTAB");	//¶L•X≤≈∏π™Ì 
     for(i = 0; i < headerMax; i++) {
         symlitPrint(symtabHeader[i], i, &row);
     }
-    printf("\n\n%15s\nRow Hash LitName Address Use\n", "LITTAB");
+    printf("\n\n%15s\nRow Hash LitName Address Use\n", "LITTAB");	//¶L•X±`º∆™Ì 
     row = 0;
     for(i = 0; i < headerMax; i++) {
         symlitPrint(littabHeader[i], i, &row);
     }
-    printf("\n\n%40s\nRow addr/use%8s%47s\n", "Original Program <literal pool>", "Code", "Target Address");
     row = 0;
     fclose(fp_input);
     fclose(fp_output);
-
-//--------------------------------------------------
+//  ≤ƒ§GΩ¸∞j
+	printf("\n\n%40s\nRow addr/use%8s%47s\n", "Original Program <literal pool>", "Code", "Target Address"); 
     fp_input = fopen("intermediate.txt", "r");
     fp_output = fopen("D0746323_OBJFILE.txt", "w");
     int address, ta = 0;
@@ -514,7 +514,7 @@ int main() {
         flag++;
         row++;
         fscanf(fp_input, "%X %d", &address, &use);
-        if(feof(fp_input) != 0) break;  //warning
+        if(feof(fp_input) != 0) break;
         fgets(srcStr, srcMax, fp_input);
         strncpy(temp, srcStr + 1, srcTagMax);
         srcTag = token(temp);
@@ -524,18 +524,18 @@ int main() {
         srcOperand = token(temp2);
         strncpy(temp3, srcStr + 1 + srcTagMax + 2 + srcCodeMax + 2 + srcOperandMax + 1, srcOperandMax);
         srcOperand2 = token(temp3);
-        if(!strcmp(srcCode, "START")) {
+        if(!strcmp(srcCode, "START")) {	//START
             fprintf(fp_output, "H%-6s%06X%06X\nT%06X%02X", srcTag, blockTab[0].start, blockTab[blockTabMax-1].start + blockTab[blockTabMax-1].length, thead->start, thead->length);     //Êîπ
             printf("%2d  %04X %d %s\n", row, address, use, srcStr);
             continue;
         }
-        if(strcmp(srcCode, "END") != 0) {
+        if(strcmp(srcCode, "END") != 0) {	//not END 
             ptr = optabFind(optabHeader[key(srcCode)], srcCode);
             if(ptr != NULL) {
                 //code
                 if(!strcmp(ptr->format, "3/4")) {
-                    if(srcStr[srcExtendTagIndex+1] == '+') {    //4
-                        if(srcStr[srcOperTagIndex + 1] == '#') {
+                    if(srcStr[srcExtendTagIndex+1] == '+') {    //ÆÊ¶°•| 
+                        if(srcStr[srcOperTagIndex + 1] == '#') {	//ni 
                             ta += (ptr->opcode + 1) * (int)pow(16,6) ;
                         }
                         else if(srcStr[srcOperTagIndex + 1] == '@') {
@@ -544,15 +544,15 @@ int main() {
                         else{
                             ta += (ptr->opcode + 3) * (int)pow(16,6);
                         }
-                        ta += 1 * (int)pow(16,5);
+                        ta += 1 * (int)pow(16,5);	//¬X•R e
                         ta += symlitFind(symtabHeader[key(srcOperand)], srcOperand)->loc;
                         printf("%2d  %04X %d %s          %08X\n", row, address, use, srcStr, ta);
                         tPrint(fp_output, address, use, 4);
                         fprintf(fp_output, "%08X", ta);
                         continue;
                     }
-                    else{   //3
-                        if(srcStr[srcOperTagIndex + 1] == '#') {
+                    else{   //ÆÊ¶°§T 
+                        if(srcStr[srcOperTagIndex + 1] == '#') {	//ni 
                             ta += (ptr->opcode + 1) * (int)pow(16,4);
                         }
                         else if(srcStr[srcOperTagIndex + 1] == '@') {
@@ -561,17 +561,17 @@ int main() {
                         else{
                             ta += (ptr->opcode + 3) * (int)pow(16,4);
                         }
-                        if(srcOperand2 != NULL) {   //nixbpe
+                        if(srcOperand2 != NULL) {   //Ø¡§ﬁ x 
                             if(!strcmp(srcOperand2, "X")) {
                                 ta += 8 * (int)pow(16,3);
                             }
                         }
-                        if(srcStr[srcOperTagIndex + 1] == '#' && *srcOperand <= '9' && *srcOperand >= '0' ) {
+                        if(srcStr[srcOperTagIndex + 1] == '#' && *srcOperand <= '9' && *srcOperand >= '0' ) {	//™Ω±µ©wß} 
                             ta += atoi(srcOperand);
                         }
-                        else if(srcStr[srcOperTagIndex+1] == '=') {
+                        else if(srcStr[srcOperTagIndex+1] == '=') {	//±`º∆ 
                             if(base == NULL) {
-                                ta += 2 * (int)pow(16,3);
+                                ta += 2 * (int)pow(16,3);	//p
                                 ta += ((symlitFind(littabHeader[key(srcOperand)], srcOperand)->loc + blockTab[symlitFind(littabHeader[key(srcOperand)], srcOperand)->use].start - address - 3) % (int)pow(16,3) );
                                 if(symlitFind(littabHeader[key(srcOperand)], srcOperand)->loc + blockTab[symlitFind(littabHeader[key(srcOperand)], srcOperand)->use].start - address - 3 < 0) {
                                     ta += 1 * (int)pow(16,3);
@@ -580,21 +580,21 @@ int main() {
                             else{
                                 if(abs(symlitFind(littabHeader[key(srcOperand)], srcOperand)->loc - base->loc) < abs(symlitFind(littabHeader[key(srcOperand)], srcOperand)->loc - address - 3) && base->loc < address ) {
                                     ta += (symlitFind(littabHeader[key(srcOperand)], srcOperand)->loc - base->loc) % (int)pow(16,3);
-                                    ta += 4 * (int)pow(16,3);
+                                    ta += 4 * (int)pow(16,3);	//b
                                     if(symlitFind(littabHeader[key(srcOperand)], srcOperand)->loc - base->loc < 0) {
                                         ta += 1 * (int)pow(16,3);
                                     }
                                 }
                                 else{
                                     ta += (symlitFind(littabHeader[key(srcOperand)], srcOperand)->loc - address - 3) % (int)pow(16,3);
-                                    ta += 2 * (int)pow(16,3);
+                                    ta += 2 * (int)pow(16,3);	//p
                                     if(symlitFind(littabHeader[key(srcOperand)], srcOperand)->loc - address - 3 < 0) {
                                         ta += 1 * (int)pow(16,3);
                                     }
                                 }
                             }
                         }
-                        else if(strcmp(ptr->info, "null") != 0) {
+                        else if(strcmp(ptr->info, "null") != 0) {	//∫‚∞Ú©≥¶Ï≤æ•H§Œµ{¶°≠pº∆¶Ï≤æ 
                             if(base == NULL) {
                                 ta += (symlitFind(symtabHeader[key(srcOperand)], srcOperand)->loc + blockTab[symlitFind(symtabHeader[key(srcOperand)], srcOperand)->use].start - address - 3) % (int)pow(16,3) ;
                                 ta += 2 * (int)pow(16,3);
@@ -625,14 +625,14 @@ int main() {
                         continue;
                     }
                 }
-                else if(!strcmp(ptr->format, "2")) {    //2
-                    ta += ptr->opcode * (int)pow(16,2);
-                    for(i = 0; i < regtabHeaderMax; i++) {
+                else if(!strcmp(ptr->format, "2")) {    //ÆÊ¶°§G 
+                    ta += ptr->opcode * (int)pow(16,2);	//ni 
+                    for(i = 0; i < regtabHeaderMax; i++) {	//º»¶sæπ1 
                         if(!strcmp(srcOperand, reg[i].name)) {
                             ta += reg[i].code * (int)pow(16,1);
                         }
                     }
-                    if(srcOperand2 != NULL) {
+                    if(srcOperand2 != NULL) {	//º»¶sæπ2 
                         for(i = 0; i < regtabHeaderMax; i++) {
                             if(!strcmp(srcOperand2, reg[i].name)) {
                                 ta += reg[i].code;
@@ -645,10 +645,10 @@ int main() {
                     continue;
                 }
             }
-            else if(!strcmp(srcCode, "BASE")) {
+            else if(!strcmp(srcCode, "BASE")) {	//BASE base´¸º–´¸¶V¶π∏ÍÆ∆ 
                 base = symlitFind(symtabHeader[key(srcOperand)], srcOperand);
             }
-            else if(srcStr[srcExtendTagIndex + 1] == '=') {
+            else if(srcStr[srcExtendTagIndex + 1] == '=') {	//±`º∆ 
                 if(*srcCode == 'C') {
                     printf("%2d  %04X %d %s          ", row, address, use, srcStr);
                     for(i = 2; i < strlen(srcCode); i++) {
@@ -672,7 +672,7 @@ int main() {
                     continue;
                 }
             }
-            else if(!strcmp(srcCode, "BYTE")) {
+            else if(!strcmp(srcCode, "BYTE")) {	//BYTE 
                 printf("%2d  %04X %d %s          ", row, address, use, srcStr);
                 if(tptr->length == 0 || blockTab[use].start + address + 1 > tptr->start + tptr->length ) {
                     tptr = tptr->next;
@@ -689,11 +689,11 @@ int main() {
                 printf("\n");
                 continue;
             }
-        }else{
+        }else{	//END §£¶L•X¶Ï∏m 
         	printf("%2d         %s\n", row, srcStr);
 			continue;	
 		}
-		if(!strcmp(srcCode, "LTORG")) {
+		if(!strcmp(srcCode, "LTORG")) {	//LTORG §£¶L•X¶Ï∏m 
 			printf("%2d         %s\n", row, srcStr);
 		}else{
 			printf("%2d  %04X %d %s\n", row, address, use, srcStr);
@@ -705,4 +705,3 @@ int main() {
     fclose(fp_output);
     return 0;
 }
-//end
