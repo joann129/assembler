@@ -57,7 +57,8 @@ struct block_Node
 typedef struct block_Node block_node;
 block_node blockTab[blockTabMax];
 
-struct t_Node{
+struct t_Node
+{
     int start;
     int length;
     int use;
@@ -65,7 +66,8 @@ struct t_Node{
 };
 typedef struct t_Node t_node;
 
-struct m_Node{
+struct m_Node
+{
     int loc;
     struct m_Node *next;
 };
@@ -73,16 +75,14 @@ typedef struct m_Node m_node;
 t_node *thead = NULL, *tptr;
 m_node *mhead = NULL, *mptr;
 
-int key(char name[opcodeNameMax])
+void regtabPrint(void)
 {
-    int i, sum = 0;
-    for(i = 0; i < strlen(name); i++)
+    printf("%14s\nRow REG_Name REG_Code\n", "REGTAB");
+    for(int row = 1; row <= 9; row++)
     {
-        sum += name[i];
+        printf("%2d%7s%8d\n", row, reg[row-1].name, reg[row-1].code);
     }
-    sum %= 10;
-    return sum;
-
+    printf("\n");
 }
 
 optab_node * optabNewNode(void)
@@ -90,44 +90,6 @@ optab_node * optabNewNode(void)
     optab_node * add = malloc(sizeof(optab_node));
     add->next = NULL;
     return add;
-}
-
-symlit_node * symlitNewNode(void)
-{
-    symlit_node * add = malloc(sizeof(symlit_node));
-    add->addressFlag = 0;
-    add->use = use;
-    add->next = NULL;
-    return add;
-}
-
-t_node * tNewNode(int start, int use) {
-    t_node * add = malloc(sizeof(t_node));
-    add->start = start;
-    add->length = 0;
-    add->use = use;
-    add->next = NULL;
-    return add;
-}
-
-m_node * mNewNode(int address) {
-    m_node * add = malloc(sizeof(m_node));
-    add->loc = address + 1;
-    add->next = NULL;
-    return add;
-}
-
-void tbuild(int loc, int length, int flag, int use) {
-    if(thead == NULL) {
-        thead = tNewNode(length - loc, use);
-        tptr = thead;
-    }else if(30 < tptr->length + loc || flag){
-        tptr->next = tNewNode(length - loc, use);
-        tptr = tptr->next;
-        tptr->length += loc;
-    }else{
-        tptr->length += loc;
-    }
 }
 
 void optabPrint(optab_node * head, int hash, int * row)
@@ -185,60 +147,14 @@ void optabCreate(void)
     }
     printf("\n");
 }
-optab_node * optabFind(optab_node * head, char srcCode[srcCodeMax+1])
-{
-    optab_node * ptr = head;
-    while(ptr != NULL)
-    {
-        if(!strcmp(ptr->name, srcCode))
-        {
-            return ptr;
-        }
-        ptr = ptr->next;
-    }
-    return NULL;
-}
-void symlitPrint(symlit_node * head, int hash, int * row)
-{
-    symlit_node * ptr;
-    if(head->next != NULL)
-    {
-        ptr = head->next;
-        while(ptr != NULL)
-        {
-            (*row)++;
-            printf("%2d%5d%8s   %04X %4d\n", *row, hash, ptr->name, ptr->loc, ptr->use);
-            ptr = ptr->next;
-        }
-    }
-}
 
-void symlitInsert(symlit_node * head, char name[symtabNameMax], int loc)
+symlit_node * symlitNewNode(void)
 {
-    symlit_node * ptr;
-    ptr = head;
-    while(ptr->next != NULL)
-    {
-        ptr = ptr->next;
-    }
-    ptr->next = symlitNewNode();
-    ptr = ptr->next;
-    strcpy(ptr->name, name);
-    ptr->loc = loc;
-}
-
-symlit_node * symlitFind(symlit_node * head, char tag[symtabNameMax])
-{
-    symlit_node * ptr = head;
-    while(ptr != NULL)
-    {
-        if(!strcmp(ptr->name, tag))
-        {
-            return ptr;
-        }
-        ptr = ptr->next;
-    }
-    return NULL;
+    symlit_node * add = malloc(sizeof(symlit_node));
+    add->addressFlag = 0;
+    add->use = use;
+    add->next = NULL;
+    return add;
 }
 
 void symtabCreate(void)
@@ -256,6 +172,111 @@ void littabCreate(void)
     for(i = 0; i < headerMax; i++)
     {
         littabHeader[i] = symlitNewNode();
+    }
+}
+
+char *token(char temp[20])
+{
+    char * tok;
+    if(temp[0] == ' ')
+    {
+        return NULL;
+    }
+    else
+    {
+        tok = strtok(temp, " ");
+        return tok;
+    }
+}
+
+t_node * tNewNode(int start, int use)
+{
+    t_node * add = malloc(sizeof(t_node));
+    add->start = start;
+    add->length = 0;
+    add->use = use;
+    add->next = NULL;
+    return add;
+}
+
+void tbuild(int loc, int length, int flag, int use)
+{
+    if(thead == NULL)
+    {
+        thead = tNewNode(length - loc, use);
+        tptr = thead;
+    }
+    else if(30 < tptr->length + loc || flag)
+    {
+        tptr->next = tNewNode(length - loc, use);
+        tptr = tptr->next;
+        tptr->length += loc;
+    }
+    else
+    {
+        tptr->length += loc;
+    }
+}
+
+int key(char name[opcodeNameMax])
+{
+    int i, sum = 0;
+    for(i = 0; i < strlen(name); i++)
+    {
+        sum += name[i];
+    }
+    sum %= 10;
+    return sum;
+
+}
+
+symlit_node * symlitFind(symlit_node * head, char tag[symtabNameMax])
+{
+    symlit_node * ptr = head;
+    while(ptr != NULL)
+    {
+        if(!strcmp(ptr->name, tag))
+        {
+            return ptr;
+        }
+        ptr = ptr->next;
+    }
+    return NULL;
+}
+
+void symlitInsert(symlit_node * head, char name[symtabNameMax], int loc)
+{
+    symlit_node * ptr;
+    ptr = head;
+    while(ptr->next != NULL)
+    {
+        ptr = ptr->next;
+    }
+    ptr->next = symlitNewNode();
+    ptr = ptr->next;
+    strcpy(ptr->name, name);
+    ptr->loc = loc;
+}
+
+m_node * mNewNode(int loc)
+{
+    m_node * add = malloc(sizeof(m_node));
+    add->loc = loc;
+    add->next = NULL;
+    return add;
+}
+
+void mbuild(int loc)
+{
+    if(mhead == NULL)
+    {
+        mhead = mNewNode(loc+1);
+        mptr = mhead;
+    }
+    else
+    {
+        mptr->next = mNewNode(loc+1);
+        mptr = mptr->next;
     }
 }
 
@@ -294,44 +315,81 @@ void littabAddressing(FILE* fp, symlit_node * head)
     }
 }
 
-void regtabPrint(void)
+optab_node * optabFind(optab_node * head, char srcCode[srcCodeMax+1])
 {
-    printf("%14s\nRow REG_Name REG_Code\n", "REGTAB");
-    for(int row = 1; row <= 9; row++)
+    optab_node * ptr = head;
+    while(ptr != NULL)
     {
-        printf("%2d%7s%8d\n", row, reg[row-1].name, reg[row-1].code);
+        if(!strcmp(ptr->name, srcCode))
+        {
+            return ptr;
+        }
+        ptr = ptr->next;
     }
-    printf("\n");
+    return NULL;
 }
 
-void tModify(void) {
+void tModify(void)
+{
     tptr = thead;
-    while(tptr != NULL) {
+    while(tptr != NULL)
+    {
         tptr->start += blockTab[tptr->use].start;
         tptr = tptr->next;
     }
 }
 
-void tPrint(void) {
+void tPrint(void)
+{
     tptr = thead;
-    while(tptr != NULL) {
+    while(tptr != NULL)
+    {
         printf("T%06X%02X\n", tptr->start, tptr->length);
         tptr = tptr->next;
     }
 }
 
-char *token(char temp[20])
+void mPrint(void)
 {
-    char * tok;
-    if(temp[0] == ' ')
+    mptr = mhead;
+    while(mptr != NULL)
     {
-        return NULL;
+        printf("M%06X05\n", mptr->loc);
+        mptr = mptr->next;
+    }
+}
+
+void symlitPrint(symlit_node * head, int hash, int * row)
+{
+    symlit_node * ptr;
+    if(head->next != NULL)
+    {
+        ptr = head->next;
+        while(ptr != NULL)
+        {
+            (*row)++;
+            printf("%2d%5d%8s   %04X %4d\n", *row, hash, ptr->name, ptr->loc, ptr->use);
+            ptr = ptr->next;
+        }
+    }
+}
+
+void objPrint(FILE* fp, int address, int ta,int use, int length)
+{
+    if(tptr->length == 0 || blockTab[use].start + address + length > tptr->start + tptr->length )
+    {
+        tptr = tptr->next;
+        while(tptr->length == 0)
+        {
+            tptr = tptr->next;
+        }
+        fprintf(fp, "\nT%06X%02X%X", tptr->start, tptr->length, ta);
     }
     else
     {
-        tok = strtok(temp, " ");
-        return tok;
+        fprintf(fp, "%X", ta);
     }
+
 }
 
 int main()
@@ -488,6 +546,10 @@ int main()
             }
             else if(srcStr[srcExtendTagIndex] == '+')
             {
+                if(srcStr[srcOperTagIndex] != '#')
+                {
+                    mbuild(blockTab[use].length);
+                }
                 blockTab[use].length += 4;
                 tbuild(4, blockTab[use].length, 0, use);
             }
@@ -550,7 +612,9 @@ int main()
         blockTab[i+1].start = blockTab[i].start + blockTab[i].length;
     }
     tModify();
-//    tPrint();
+    tPrint();
+    tptr = thead;
+    mPrint();
     printf("%15s\nRow Hash SymName Address Use\n", "SYMTAB");
     for(i = 0; i < headerMax; i++)
     {
@@ -598,7 +662,7 @@ int main()
         srcOperand2 = token(temp3);
         if(!strcmp(srcCode, "START"))
         {
-            fprintf(fp_output, "H%-6s%06X%06X\n", srcTag, blockTab[0].start, blockTab[blockTabMax-1].start + blockTab[blockTabMax-1].length);     //改
+            fprintf(fp_output, "H%-6s%06X%06X\nT%06X%02X", srcTag, blockTab[0].start, blockTab[blockTabMax-1].start + blockTab[blockTabMax-1].length, thead->start, thead->length);     //改
             printf("%2d  %04X %d %s\n", row, address, use, srcStr);
             continue;
         }
@@ -629,6 +693,7 @@ int main()
                         ta += 1 * (int)pow(16,5);
                         ta += symlitFind(symtabHeader[key(srcOperand)], srcOperand)->loc;
                         printf("%2d  %04X %d %s          %08X\n", row, address, use, srcStr, ta);
+                        objPrint(fp_output, address, ta, use, 4);
                         continue;
                     }
                     else    //3
@@ -724,6 +789,7 @@ int main()
                         }
 //                        printf("%s ta:%06X\n", srcCode, ta);
                         printf("%2d  %04X %d %s          %06X\n", row, address, use, srcStr, ta);
+                        objPrint(fp_output, address, ta, use, 3);
                         continue;
                     }
 
@@ -749,6 +815,7 @@ int main()
                         }
                     }
                     printf("%2d  %04X %d %s          %04X\n", row, address, use, srcStr, ta);
+                    objPrint(fp_output, address, ta, use, 2);
                     continue;
                 }
 
@@ -766,6 +833,7 @@ int main()
                     {
                         if(*(srcCode + i) == '\'') break;
                         printf("%X", *(srcCode + i));
+                        objPrint(fp_output, address, *(srcCode + i), use, 3);
                     }
                     printf("\n");
                     continue;
@@ -777,6 +845,7 @@ int main()
                     {
                         if(*(srcCode + i) == '\'') break;
                         printf("%X", *(srcCode + i) - 48);
+                        objPrint(fp_output, address, *(srcCode + i) - 48, use, 1);
                     }
                     printf("\n");
                     continue;
@@ -785,10 +854,20 @@ int main()
             else if(!strcmp(srcCode, "BYTE"))
             {
                 printf("%2d  %04X %d %s          ", row, address, use, srcStr);
+                if(tptr->length == 0 || blockTab[use].start + address + 1 > tptr->start + tptr->length )
+                {
+                    tptr = tptr->next;
+                    while(tptr->length == 0)
+                    {
+                        tptr = tptr->next;
+                    }
+                    fprintf(fp_output, "\nT%06X%02X", tptr->start, tptr->length);
+                }
                 for(i = 2; i < strlen(srcOperand); i++)
                 {
                     if(*(srcOperand + i) == '\'') break;
                     printf("%C", *(srcOperand + i));
+                    fprintf(fp_output, "%C", *(srcOperand + i));
                 }
                 printf("\n");
                 continue;
@@ -796,9 +875,6 @@ int main()
         }
         printf("%2d  %04X %d %s\n", row, address, use, srcStr);
     }
-
-
-
     fclose(fp_input);
     fclose(fp_output);
     return 0;
