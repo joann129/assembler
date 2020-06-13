@@ -71,7 +71,8 @@ m_node *mhead = NULL, *mptr;
 
 void regtabPrint(void) {
     printf("%14s\nRow REG_Name REG_Code\n", "REGTAB");
-    for(int row = 1; row <= 9; row++) {
+    int row;
+    for(row = 1; row <= 9; row++) {
         printf("%2d%7s%8d\n", row, reg[row-1].name, reg[row-1].code);
     }
     printf("\n");
@@ -515,7 +516,6 @@ int main() {
         fscanf(fp_input, "%X %d", &address, &use);
         if(feof(fp_input) != 0) break;  //warning
         fgets(srcStr, srcMax, fp_input);
-//        printf("%d %04X %s\n", row, address, srcStr);
         strncpy(temp, srcStr + 1, srcTagMax);
         srcTag = token(temp);
         strncpy(temp1, srcStr + 1 + srcTagMax + 2, srcCodeMax);
@@ -689,8 +689,15 @@ int main() {
                 printf("\n");
                 continue;
             }
-        }
-        printf("%2d  %04X %d %s\n", row, address, use, srcStr);
+        }else{
+        	printf("%2d         %s\n", row, srcStr);
+			continue;	
+		}
+		if(!strcmp(srcCode, "LTORG")) {
+			printf("%2d         %s\n", row, srcStr);
+		}else{
+			printf("%2d  %04X %d %s\n", row, address, use, srcStr);
+		}
     }
     mPrint(fp_output);
     fprintf(fp_output, "\nE%06X", blockTab[0].start);
