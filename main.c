@@ -206,7 +206,7 @@ void tbuild(int loc, int length, int flag, int use)
         thead = tNewNode(length - loc, use);
         tptr = thead;
     }
-    else if(30 < tptr->length + loc || flag)
+    else if(30 < tptr->length + loc || tptr->start + tptr->length + loc != length || flag)
     {
         tptr->next = tNewNode(length - loc, use);
         tptr = tptr->next;
@@ -339,22 +339,13 @@ void tModify(void)
     }
 }
 
-void tPrint(void)
-{
-    tptr = thead;
-    while(tptr != NULL)
-    {
-        printf("T%06X%02X\n", tptr->start, tptr->length);
-        tptr = tptr->next;
-    }
-}
-
-void mPrint(void)
+void mPrint(FILE* fp)
 {
     mptr = mhead;
     while(mptr != NULL)
     {
-        printf("M%06X05\n", mptr->loc);
+        fprintf(fp, "\nM%06X05", mptr->loc);
+//        printf("M%06X05\n", mptr->loc);
         mptr = mptr->next;
     }
 }
@@ -374,20 +365,16 @@ void symlitPrint(symlit_node * head, int hash, int * row)
     }
 }
 
-void objPrint(FILE* fp, int address, int ta,int use, int length)
+void tPrint(FILE* fp, int address,int use, int length)
 {
-    if(tptr->length == 0 || blockTab[use].start + address + length > tptr->start + tptr->length )
+    if(tptr->length == 0 || blockTab[use].start + address + length > tptr->start + tptr->length || tptr->use != use )
     {
         tptr = tptr->next;
         while(tptr->length == 0)
         {
             tptr = tptr->next;
         }
-        fprintf(fp, "\nT%06X%02X%X", tptr->start, tptr->length, ta);
-    }
-    else
-    {
-        fprintf(fp, "%X", ta);
+        fprintf(fp, "\nT%06X%02X", tptr->start, tptr->length);
     }
 
 }
@@ -402,8 +389,8 @@ int main()
     strcpy(blockTab[0].name, "DEFAULT");
     strcpy(blockTab[1].name, "NULL");
     strcpy(blockTab[2].name, "NULL");
-//    FILE * fp_input = fopen("srcpro.txt", "r");
-    FILE * fp_input = fopen("srcpro2.11.txt", "r");
+    FILE * fp_input = fopen("srcpro.txt", "r");
+//    FILE * fp_input = fopen("srcpro2.11.txt", "r");
     FILE * fp_output = fopen("intermediate.txt", "w");
     char srcStr[srcMax+5], temp[10], temp1[10], temp2[10], temp3[10];
     char *srcTag, *srcCode, *srcOperand, *srcOperand2;
@@ -612,15 +599,13 @@ int main()
         blockTab[i+1].start = blockTab[i].start + blockTab[i].length;
     }
     tModify();
-    tPrint();
     tptr = thead;
-    mPrint();
     printf("%15s\nRow Hash SymName Address Use\n", "SYMTAB");
     for(i = 0; i < headerMax; i++)
     {
         symlitPrint(symtabHeader[i], i, &row);
     }
-    printf("\n\n%15s\nRow Hash SymName Address Use\n", "LITTAB");
+    printf("\n\n%15s\nRow Hash LitName Address Use\n", "LITTAB");
     row = 0;
     for(i = 0; i < headerMax; i++)
     {
@@ -693,7 +678,8 @@ int main()
                         ta += 1 * (int)pow(16,5);
                         ta += symlitFind(symtabHeader[key(srcOperand)], srcOperand)->loc;
                         printf("%2d  %04X %d %s          %08X\n", row, address, use, srcStr, ta);
-                        objPrint(fp_output, address, ta, use, 4);
+                        tPrint(fp_output, address, use, 4);
+                        fprintf(fp_output, "%08X", ta);
                         continue;
                     }
                     else    //3
@@ -789,7 +775,8 @@ int main()
                         }
 //                        printf("%s ta:%06X\n", srcCode, ta);
                         printf("%2d  %04X %d %s          %06X\n", row, address, use, srcStr, ta);
-                        objPrint(fp_output, address, ta, use, 3);
+                        tPrint(fp_output, address, use, 3);
+                        fprintf(fp_output, "%06X", ta);
                         continue;
                     }
 
@@ -815,7 +802,8 @@ int main()
                         }
                     }
                     printf("%2d  %04X %d %s          %04X\n", row, address, use, srcStr, ta);
-                    objPrint(fp_output, address, ta, use, 2);
+                    tPrint(fp_output, address, use, 2);
+                    fprintf(fp_output, "%04X", ta);
                     continue;
                 }
 
@@ -833,7 +821,8 @@ int main()
                     {
                         if(*(srcCode + i) == '\'') break;
                         printf("%X", *(srcCode + i));
-                        objPrint(fp_output, address, *(srcCode + i), use, 3);
+                        tPrint(fp_output, address, use, 1);
+                        fprintf(fp_output, "%X",  *(srcCode + i));
                     }
                     printf("\n");
                     continue;
@@ -845,7 +834,8 @@ int main()
                     {
                         if(*(srcCode + i) == '\'') break;
                         printf("%X", *(srcCode + i) - 48);
-                        objPrint(fp_output, address, *(srcCode + i) - 48, use, 1);
+                        tPrint(fp_output, address, use, 1);
+                        fprintf(fp_output, "%X",  *(srcCode + i) - 48);
                     }
                     printf("\n");
                     continue;
@@ -875,6 +865,8 @@ int main()
         }
         printf("%2d  %04X %d %s\n", row, address, use, srcStr);
     }
+    mPrint(fp_output);
+    fprintf(fp_output, "\nE%06X", blockTab[0].start);
     fclose(fp_input);
     fclose(fp_output);
     return 0;
