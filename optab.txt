@@ -16,7 +16,7 @@ J      3/4 3C m
 JEQ    3/4 30 m
 JGT    3/4 34 m
 JLT    3/4 38 m
-JSUB   3/4 58 m
+JSUB   3/4 48 m
 LDA    3/4 00 m
 LDB    3/4 68 m
 LDCH   3/4 50 m
